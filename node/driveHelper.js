@@ -1,3 +1,11 @@
+/*TO DO:
+ *  Modularize!!!
+ *  getAuth() uses "Navalis" project specific token name
+ *
+ *
+ */
+
+
 var fs = require('fs');
 var readline = require('readline');
 var google = require('googleapis');
@@ -151,7 +159,7 @@ function getAuth(secretPath, scopes) {
   var SCOPES = scopes;
   var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
       process.env.USERPROFILE) + '/.credentials/';
-  var TOKEN_PATH = TOKEN_DIR + 'drive-nodejs-quickstart.json';
+  var TOKEN_PATH = TOKEN_DIR + "navalis.json";
 
   function readFile (fileName) {
     return new Promise(function (fulfill, reject){
@@ -215,7 +223,7 @@ function getAuth(secretPath, scopes) {
             reject(err);
           }
           oauth2Client.credentials = token;
-          storeToken(token).then(fufill(oauth2Client));
+          storeToken(token).then(fulfill(oauth2Client));
         });
       });
     });
