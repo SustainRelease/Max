@@ -10,9 +10,9 @@ module.exports = function () {
   var session = require('express-session');
   var MongoStore = require('connect-mongo')(session);
 
-  var main = require('./routes/main');
-  var project = require('./routes/project');
-  var profile = require('./routes/profile');
+  var main = require('./Routes/main');
+  var project = require('./Routes/project');
+  var profile = require('./Routes/profile');
 
   var sites = require('../bin/siteManager.json');
   port = sites.Max.port;
