@@ -77,7 +77,7 @@ module.exports = function () {
 
   app.set('port', port);
 
-  console.log("Serving page at :" + port);
+  console.log("Serving page at :" + port + subRoute);
 
   return app;
 }

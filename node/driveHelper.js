@@ -187,6 +187,8 @@ function getAuth(secretPath, scopes) {
             fulfill(auth);
           });
         } else {
+          console.log("Current token found at " + TOKEN_PATH);
+          console.log(token);
           oauth2Client.credentials = JSON.parse(token);
           auth = oauth2Client;
           fulfill(auth);
