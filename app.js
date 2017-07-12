@@ -44,7 +44,7 @@ module.exports = function () {
   });*/
 
   // view engine setup
-  app.set('views', path.join(__dirname, 'views'));
+  app.set('views', path.join(__dirname, 'Views'));
   app.set('view engine', 'pug');
 
   //app.use(logger('dev'));
@@ -52,7 +52,7 @@ module.exports = function () {
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
 
-  app.use('/staticMax', express.static(__dirname + '/public'));
+  app.use('/staticMax', express.static(__dirname + '/Public'));
 
   app.use(subRoute, main(subRoute));
   app.use(subRoute, project(subRoute));
