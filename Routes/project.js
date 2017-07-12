@@ -8,7 +8,7 @@ module.exports = function (subRoute) {
 
 
   //Setting up variables for drive helper request
-  var secretPath = "data/client_secret.json";
+  var secretPath = "./data/client_secret.json";
   var fields = "id, name, mimeType, parents, modifiedTime";
   function tidyFunction (file) {
     var moment = require("moment");
