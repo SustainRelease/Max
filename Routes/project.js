@@ -3,12 +3,13 @@ module.exports = function (subRoute) {
   var router = express.Router();
   var driveHelper = require("../node/driveHelper.js");
   var projectFolderId;
+  var path = require('path');
   var legalIds = [];
   //var mid = require('../middleware/middle.js');
 
 
   //Setting up variables for drive helper request
-  var secretPath = "./data/client_secret.json";
+  var secretPath = path.join(__dirname,"..","data","client_secret.json");
   var fields = "id, name, mimeType, parents, modifiedTime";
   function tidyFunction (file) {
     var moment = require("moment");
