@@ -3,7 +3,7 @@ module.exports = function (subRoute, profileManager) {
   var router = express.Router();
   var path = require('path');
   var kusetData = require("../data/kusetData.json");
-  var kusetManager = require('../kusetManager')(kusetData.defaultKuset, kusetData.kusets);
+  var kusetManager = require('../kusetManager')(kusetData.defaultKuset, kusetData.kusets, kusetData.configs);
 
   router.get('/register', function(req, res, next) {
     res.render('register', {subR: subRoute, regVals: kusetManager.getFormVals("register")});
@@ -17,7 +17,7 @@ module.exports = function (subRoute, profileManager) {
 
   router.get('/profile', function(req, res, next) {
     if (req.query.edit) {
-      res.render('profileEdit', {subR: subRoute, proVals: kusetManager.getFormVals()});
+      res.render('profileEdit', {subR: subRoute, proVals: kusetManager.getFormVals("profileEdit")});
     } else {
       res.render('profile', {subR: subRoute});
     }

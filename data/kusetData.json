@@ -1,4 +1,14 @@
 {
+  "configs": {
+    "register": {
+      "tagReq": "register",
+      "allowDuplicates": true
+    },
+    "profileEdit": {
+      "allowDuplicates": false,
+      "excludeIds": ["password", "TAC"]
+    }
+  },
   "defaultKuset": {
     "permanent": false,
     "confirm": false,
@@ -28,12 +38,15 @@
       "id": "email",
       "text": "Email",
       "confirm": true,
+      "email": true,
       "register": true
     },
     {
       "id": "gmail",
       "text": "Gmail",
       "confirm": true,
+      "email": true,
+      "gmail": true,
       "permanent": true,
       "register": true
     },
@@ -64,6 +77,7 @@
         "Engineer",
         "Client"
       ],
+      "permanent": true,
       "register": true
     },
     {
@@ -74,19 +88,23 @@
     },
     {
       "id": "postCode",
-      "text": "Post Code"
+      "text": "Post Code",
+      "required": false
     },
     {
       "id": "address",
-      "text": "Address"
+      "text": "Address",
+      "required": false
     },
     {
       "id": "city",
-      "text": "City"
+      "text": "City",
+      "required": false
     },
     {
       "id": "country",
-      "text": "Country"
+      "text": "Country",
+      "required": false
     }
   ]
 }

@@ -1,6 +1,6 @@
 $(document).ready(function () {
   formValidator.setup();
-  form = $("#registerForm");
+  form = $("#profileForm");
   form.submit(function(event) {
     var nIssues = formValidator.checkAll(true);
     if (nIssues) {
