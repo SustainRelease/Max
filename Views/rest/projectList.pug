@@ -1,0 +1,50 @@
+
+h3.tableTitle FPSOCRANE FOUNDATION CALCULATION
+if (badId)
+  h4.errText ERROR: Bad file Id
+else
+  table.fileTable(cellspacing="0")
+    tr
+      if (files[0].isProject)
+        td.thin
+        td.bumpRight MAIN PROJECT FOLDER
+      else
+        td.thin
+          img.icon(src="/staticMax/images/icoBack.jpg" onclick="loadFolderContent('" + files[0].parents[0] + "')")
+        td.bumpRight= files[0].name
+      td.normal
+      td.thin
+        a(href="https://drive.google.com/drive/folders/" + files[0].id target="_blank")
+          img.icon(src="/staticMax/images/icoDriveDark.png")
+    if (files.length == 1)
+      tr.empty
+        td
+        td.bumpRight.tCenter 
+          i empty
+        td
+        td
+    else
+      tr
+        th.thin
+        th Name
+        th.normal Modified
+        th.thin
+      each file, index in files
+        if (index)
+          tr
+            td.icon
+              if (file.img)
+                img(src="/staticMax/images/" + file.img)
+            if (file.mimeType == "application/vnd.google-apps.folder")
+              td
+                button.clean.link(onclick="loadFolderContent('" + file.id + "')")=file.name
+              td=file.modifiedTime
+              td.driveIcon
+                a(href="https://drive.google.com/drive/folders/" + file.id target="_blank")
+                  img.icon(src="/staticMax/images/icoDrive.png")
+            else
+              td=file.name
+              td=file.modifiedTime
+              td
+          
+button.weeVertMargin(type="button" onclick="loadFolderContent()") Main project folder

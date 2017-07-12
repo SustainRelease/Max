@@ -1,0 +1,47 @@
+extends layout
+
+block content
+  div#profile.main
+    div.pho_view
+      div.tCenter
+        img#profile_pic(src="/staticMax/images/Profile.PNG")
+        h1 Pepe Gomez
+        div#pmButton
+          a.clean.fancy(href="#") Private Message
+        p San Martin de los andes <br /> Joined in April 2014
+    div.tab_view
+      div.flex_box
+        div.flex_item.two_third.left
+          h1 Pepe Gomez
+          div#pmButton
+            a.clean.fancy(href="#") Private Message
+          p San Martin de los andes <br /> Joined in April 2014
+        div.flex_item.third.tCenter
+          img#profile_pic(src="/staticMax/images/Profile.PNG")
+    div.lap_view
+      div.flex_box
+        div.flex_item
+          img#profile_pic(src="/staticMax/images/Profile.PNG")
+        div.flex_item
+          h1.fullWidth Pepe Gomez <br />
+          p San Martin de los andes <br /> Joined in April 2014
+        div#pmButton.flex_item
+          a.clean.fancy(href="#") Private Message
+    div.flex_box
+      div.flex_item.third
+        h2 Personal Data
+        p Age
+        p Place of birth
+      div.flex_item.two_third
+        h2 Languages
+        each lang in ["English", "Spanish", "Portruguese"]
+          div.flex_box.weeVertMargin
+            div.flex_item
+              p=lang
+            div.flex_item.hAlignR.vAlign.slider
+              img(src="/staticMax/images/SlideMid.png")
+    h2 Jobs
+    p He had some jobs
+    h2 Studies
+    p He did some studies
+    h2 Reviews

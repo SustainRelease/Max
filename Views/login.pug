@@ -1,0 +1,27 @@
+extends layout
+
+block content
+  div#login.main.tCenter.form
+    h1 Login
+    table
+      form(method="post" action="#")
+        tr
+          td
+            label(for="emailAddress") Email Address
+          td
+            input(id="emailAddress" type="text" name = "emailAddress")
+        tr
+          td
+            label(for="password") Password
+          td
+            input(id="password" type="text"  name = "password")
+      tr
+        td
+        td
+          input.button(type="submit" value="Submit" name = "submit")
+      tr.high
+      tr
+        td
+        td
+          a.clean(href="./register")
+            input.button(type="submit" value="Register")

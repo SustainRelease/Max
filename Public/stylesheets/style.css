@@ -1,0 +1,497 @@
+body {
+  margin: 0;
+  background-color: #ddd;
+  background-image: url("/staticMax/images/vertical-waves.PNG");
+  text-align: left;
+  font-size: 100%;
+}
+
+h1 {
+  font-size: 2em;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.5em;
+  margin: 0;
+}
+
+h3 {
+  font-size: 1.2em;
+  margin: 0;
+}
+
+h4.errText {
+  text-align: center;
+  color: #F00;
+  background-color: #000;
+}
+
+p {
+  font-size: 1em;
+  margin: 5px 0px;
+}
+
+a.clean  {
+  font-size: 1em;
+  text-decoration: none;
+  color: inherit;
+}
+a.fancy {
+  border: 1px solid black;
+  border-radius: 10px;
+  padding: 3px;
+  background-color: hsl(100,80%,40%);
+  display: inline-block;
+}
+
+a.fancy:hover {
+  background-color: hsl(100,80%,60%);
+}
+
+
+button.clean {
+  background-color: inherit;
+  border: none;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0;
+  margin: auto;
+}
+button.clean:focus {
+  outline: 0;
+}
+button.link {
+  text-decoration: underline;
+}
+button.link:hover {
+  color: green;
+}
+
+div.main {
+  margin: 0 auto;
+  background-color: #fff;
+  border: 1px solid black;
+  padding: 3%;
+  margin-top: 20px;
+}
+
+div.block {
+  border-bottom: 1px solid black;
+  padding: 10px;
+}
+
+div.table {
+  margin: 0 20px;
+  overflow-x: auto;
+}
+
+
+/****************FLEX BOX****************/
+
+div.flex_box {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 0;
+}
+
+div.flex_box.right {
+  -webkit-justify-content: flex-end;
+  justify-content: flex-end;
+}
+
+div.flex_box.vCenter {
+  align-items: center;
+}
+
+@media screen and (max-width: 479px) {
+  div.flex_box.phoVert .flex_item {
+    text-align: center;
+    width: 100%;
+  }
+}
+
+@media screen and (min-width: 480px) {
+  div.flex_box.center {
+    -webkit-justify-content: space-around;
+    justify-content: space-around;
+  }
+
+  div.flex_box.center .flex_item {
+    margin: auto 10px;
+  }
+
+  div.flex_box.center .flex_item:first-child {
+    margin-left: auto;
+  }
+  div.flex_box.center .flex_item:last-child {
+    margin-right: auto;
+  }
+}
+
+div.flex_item {
+  padding: 0%;
+}
+
+div.flex_item.two {
+  flex: 2;
+}
+
+div.flex_item.one {
+  flex: 1;
+}
+
+div.flex_item.left {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.flex-item.vAlign img {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+div.twentieth {
+  width: 5%;
+}
+
+div.third {
+  width: 27.33%;
+}
+
+div.two_third {
+  width: 60.66%;
+}
+
+
+/****************GENERAL ALIGN****************/
+
+.weeVertMargin {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.vAlign {
+  vertical-align: middle;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.hAlign {
+  margin-left: auto;
+  margin-right: auto;
+}
+.hAlignL {
+  margin-right: auto;
+  margin-left: 0;
+}
+.hAlignR {
+  margin-right: 0;
+  margin-left: auto;
+}
+.tLeft {
+  text-align: left;
+}
+.tRight {
+  text-align: right;
+}
+.tCenter {
+  text-align: center;
+}
+.fullWidth {
+  width: 100%;
+}
+
+/****************DATA TABLE****************/
+
+table.dataTable {
+  text-align: left;
+  margin: auto;
+  border: 2px solid black;
+  border-collapse: collapse;
+}
+table.dataTable th, table.dataTable td {
+  margin: 0;
+  padding: 5px;
+  border: 1px solid black;
+}
+
+table.dataTable tr:nth-child(2n) {
+  background-color: white;
+  border-bottom: 1px solid black;
+}
+table.dataTable tr:nth-child(2n+1) {
+  background-color: #CCC;
+  border-bottom: 1px solid black;
+}
+table.dataTable tr:first-child {
+  background-color: #AAA;
+  font-weight: bold;
+  border-bottom: 2px solid black;
+}
+
+
+/****************RESPONSIVE****************/
+
+div.main {
+  width: 90%;
+}
+.pho_view {
+  display: block;
+}
+.tab_view {
+  display: none;
+}
+.lap_view {
+  display: none;
+}
+@media screen and (min-width: 480px) {
+  div.main {
+    width: 70%;
+  }
+  .pho_view {
+    display: none;
+  }
+  .tab_view {
+    display: block;
+  }
+}
+@media screen and (min-width: 660px) {
+  div.main {
+    width: 600px;
+  }
+  .tab_view {
+    display: none;
+  }
+  .lap_view {
+    display: block;
+  }
+}
+
+/****************FORMS****************/
+.form table {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.form td {
+  padding: 5px;
+  vertical-align: middle;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.form td:first-child {
+  text-align: right;
+}
+.form td:last-child {
+  text-align: left;
+}
+.form tr.high {
+  height: 20px;
+}
+.form td.issue input {
+  border: 2px solid red;
+}
+.form td.issueText {
+  color: red;
+  width: 150px;
+}
+
+/****************NAV****************/
+nav#mainNav {
+  width: 100%;
+  height: 50px;
+  background-color: #aaa;
+  border-bottom: 1px solid black;
+}
+nav#mainNav img {
+  height: 40px;
+  margin: 5px;
+  width: auto;
+}
+nav#mainNav .flex_item {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+/****************PROFILE****************/
+img#profile_pic {
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+}
+
+#pmButton {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+#profile .flex_item.slider {
+  width: 70%;
+}
+
+#profile .flex_item.slider img {
+  width: 100%;
+  margin: auto;
+  height: auto;
+  display: block;
+}
+
+
+/****************PROJECTS***************/
+#projects nav {
+  background-color: grey;
+  border-bottom: 1px solid black;
+}
+#projects nav .flex_item {
+  padding: 7px 0px;
+  text-align: center;
+}
+#projects .linkBox {
+  margin: auto;
+  width: 150px;
+  border: 1px solid black;
+  padding: 3px;
+}
+@media screen and (min-width: 480px) {
+  #projects .linkBox {
+    width: 100%;
+  }
+}
+#projects .linkBox.selected {
+  background-color: #ccc;
+}
+
+#projects .topPart {
+  margin: 10px;
+}
+
+#tableTitle, #proSchedBtn {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media screen and (min-width: 1000px) {
+  #projects .topPart.flex_box {
+    -webkit-justify-content: space-around;
+    justify-content: space-around;
+  }
+  div.topPart.flex_box .flex_item {
+    margin: auto 10px;
+  }
+
+  div.topPart.flex_box .flex_item:first-child {
+    margin-left: auto;
+    margin-right: 500px;
+    width: 300px;
+  }
+  div.topPart.flex_box .flex_item:last-child {
+    margin-right: auto;
+  }
+}
+
+/****************PROJECT***************/
+#project {
+  width: 800px;
+  overflow-x: auto;
+}
+
+#project progress {
+  width: 100%;
+  margin: 10px 0;
+  height: 20px;
+  background-color: green;
+}
+
+#project .topBit {
+  margin-bottom: 10px;
+}
+
+#project div.convo {
+  width: 100%;
+  padding: 10px 0;
+  border-top: 1px solid grey;
+}
+#project div.convo div:first-child {
+  width: 20%;
+}
+#project div.convo div:last-child {
+  width: 80%;
+}
+#project textArea {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#project img.profile {
+  width: 90%;
+  height: auto;
+  margin: 5%;
+}
+
+#project td.icon {
+  vertical-align: middle;
+}
+
+#project td.icon img, #project img.icon {
+  display: block;
+  width: 27px;
+  height: auto;
+  margin: auto;
+}
+
+#fileShare h3.tableTitle {
+  margin: 5px auto;
+  text-align: center;
+}
+
+table.fileTable {
+  text-align: left;
+  margin: auto;
+  border: 2px solid black;
+  border-collapse: collapse;
+  width: 100%;
+}
+table.fileTable th, table.fileTable td {
+  margin: 0;
+  padding: 5px;
+}
+
+th.thin, td.thin {
+  width: 5%;
+}
+th.normal, td.normal {
+  width: 15%;
+}
+
+table.fileTable tr {
+  background-color: #CCC;
+  border-bottom: 1px solid black;
+}
+table.fileTable tr:first-child {
+  background-color: #999;
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 2px solid black;
+}
+table.fileTable tr:nth-child(2) {
+  background-color: #AAA;
+  font-weight: bold;
+  border-bottom: 2px solid black;
+}
+table.fileTable tr.empty {
+  background-color: #CCC;
+  font-weight: normal;
+}
+table.fileTable td.bumpRight {
+  padding-left: 121px;
+}
+table.fileTable td.driveIcon {
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle;
+}

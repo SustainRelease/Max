@@ -1,0 +1,40 @@
+{
+  "name": "max",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "bin": {
+    "max": "build.js"
+  },
+  "scripts": {
+    "start": "node ./bin/defaultBuild"
+  },
+  "dependencies": {
+    "bcrypt": "^1.0.2",
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.17.2",
+    "connect-mongo": "^1.3.2",
+    "cookie-parser": "^1.4.3",
+    "debug": "^2.6.8",
+    "express": "^4.15.3",
+    "express-session": "^1.15.3",
+    "google-auth-library": "^0.10.0",
+    "googleapis": "^20.0.1",
+    "moment": "^2.18.1",
+    "mongoose": "^4.11.0",
+    "morgan": "~1.8.1",
+    "promise": "^8.0.0",
+    "pug": "^2.0.0-rc.2",
+    "serve-favicon": "^2.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SustainRelease/Max.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SustainRelease/Max/issues"
+  },
+  "homepage": "https://github.com/SustainRelease/Max#readme"
+}

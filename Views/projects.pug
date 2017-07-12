@@ -1,0 +1,46 @@
+extends layout
+
+block content
+  div#projects
+    nav
+      div.flex_box.center.phoVert
+        div.flex_item
+          div.linkBox.selected#pOngoing
+            button.clean(onclick="setTable('pOngoing');") Ongoing projects
+        div.flex_item
+          div.linkBox#pScheduled
+            button.clean(onclick="setTable('pScheduled');") Scheduled projects
+        div.flex_item
+          div.linkBox#pFinished
+            button.clean(onclick="setTable('pFinished');") Finished projects
+    div.table.tCenter
+      div.flex_box.topPart.phoVert
+        div.flex_item.vAlign
+          h1#tableTitle Ongoing projects
+        div.flex_item.vAlign
+          a#proSchedBtn.clean.fancy(href="#") Schedule a project
+      table.dataTable(cellspacing="0")
+        tr
+          th Ship type
+          th Description
+          th Responsible
+          th Quality check
+          th Start Date
+          th End Date
+          th Spent Hours
+          th Expected Hours
+          th Status
+          th Progress
+        each val in [1, 2, 3, 4, 5]
+          tr
+            td FPSO
+            td Crane foudation
+            td Esteban Quiroja
+            td Maximiliano Roth
+            td 6/6/2017 
+            td 15/6/2017
+            td 10
+            td 40
+            td In Progress
+            td 20%
+  script(type="text/javascript" src="/staticMax/javascripts/projects.js")

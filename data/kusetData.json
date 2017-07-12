@@ -1,0 +1,92 @@
+{
+  "defaultKuset": {
+    "permanent": false,
+    "confirm": false,
+    "required": true,
+    "multi": false,
+    "register": false
+  },
+  "kusets": [
+    {
+      "id": "firstName",
+      "text": "First Name",
+      "permanent": true,
+      "register": true
+    },
+    {
+      "id": "lastName",
+      "text": "Last Name",
+      "permanent": true,
+      "register": true
+    },
+    {
+      "id": "companyName",
+      "text": "Company Name",
+      "register": true
+    },
+    {
+      "id": "email",
+      "text": "Email",
+      "confirm": true,
+      "register": true
+    },
+    {
+      "id": "gmail",
+      "text": "Gmail",
+      "confirm": true,
+      "permanent": true,
+      "register": true
+    },
+    {
+      "id": "skype",
+      "text": "Skype",
+      "required": false
+    },
+    {
+      "id": "phone",
+      "text": "Phone"
+    },
+    {
+      "id": "password",
+      "text": "Password",
+      "confirm": true,
+      "register": true
+    },
+    {
+      "id": "userType",
+      "multi": true,
+      "selText": [
+        "I am an Engineer",
+        "I am a Client"
+      ],
+      "text": "User Type",
+      "ans": [
+        "Engineer",
+        "Client"
+      ],
+      "register": true
+    },
+    {
+      "id": "TAC",
+      "text": "Terms and Conditions",
+      "TAC": true,
+      "register": true
+    },
+    {
+      "id": "postCode",
+      "text": "Post Code"
+    },
+    {
+      "id": "address",
+      "text": "Address"
+    },
+    {
+      "id": "city",
+      "text": "City"
+    },
+    {
+      "id": "country",
+      "text": "Country"
+    }
+  ]
+}
