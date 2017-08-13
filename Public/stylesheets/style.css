@@ -4,6 +4,7 @@ body {
   background-image: url("/staticMax/images/vertical-waves.PNG");
   text-align: left;
   font-size: 100%;
+  padding-bottom: 50px;
 }
 
 h1 {
@@ -80,12 +81,18 @@ div.block {
   border-bottom: 1px solid black;
   padding: 10px;
 }
+div.block:last-child {
+  border-bottom: none;
+}
 
 div.table {
   margin: 0 20px;
   overflow-x: auto;
 }
 
+.hidden {
+  display: none;
+}
 
 /****************FLEX BOX****************/
 
@@ -232,6 +239,10 @@ table.dataTable tr:first-child {
   font-weight: bold;
   border-bottom: 2px solid black;
 }
+table.dataTable tr.sorted th:hover {
+  background-color: #CCC;
+  cursor: pointer;
+}
 
 
 /****************RESPONSIVE****************/
@@ -297,9 +308,21 @@ div.main {
 .form td.issue input {
   border: 2px solid red;
 }
-.form td.issueText {
+.form td select {
+  width: 100%;
+}
+.form td.issue select {
+  border: 2px solid red;
+}
+.form .issueText {
   color: red;
+}
+.form td.issueText {
   width: 150px;
+}
+
+.form input.submit:hover {
+  cursor: pointer;
 }
 
 /****************NAV****************/
@@ -319,17 +342,21 @@ nav#mainNav .flex_item {
   padding-right: 5px;
 }
 
+#miniProfilePic {
+  border: 1px solid black;
+  border-radius: 2px;
+  height: 30px;
+}
+
 /****************PROFILE****************/
 img#profile_pic {
   width: 100%;
-  max-width: 250px;
+  max-width: 200px;
   height: auto;
+  border: 1px solid black;
+  border-radius: 5px;
 }
 
-#pmButton {
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
 #profile .flex_item.slider {
   width: 70%;
 }
@@ -431,6 +458,8 @@ img#profile_pic {
   width: 90%;
   height: auto;
   margin: 5%;
+  border: 1px solid black;
+  border-radius: 4px;
 }
 
 #project td.icon {
@@ -442,6 +471,10 @@ img#profile_pic {
   width: 27px;
   height: auto;
   margin: auto;
+}
+
+b.lockReason {
+  font-size: 1.2em;
 }
 
 #fileShare h3.tableTitle {

@@ -1,110 +1,216 @@
 {
-  "configs": {
-    "register": {
-      "tagReq": "register",
-      "allowDuplicates": true
+  "project": {
+    "configs": {
+      "register": {
+        "tagReq": "register",
+        "allowInput": true
+      },
+      "projectEdit": {
+        "allowDuplicates": false,
+        "excludeIds": ["spentHours"],
+        "tagEx": ["permanent"],
+        "allowInput": true
+      }
     },
-    "profileEdit": {
-      "allowDuplicates": false,
-      "excludeIds": ["password", "TAC"]
-    }
+    "defaultKuset": {
+      "required": true
+    },
+    "kusets": [
+      {
+        "id": "title",
+        "text": "Title",
+        "permanent": true,
+        "register": true
+      },
+      {
+        "id": "description",
+        "text": "Description",
+        "permanent": true,
+        "register": true
+      },
+      {
+        "id": "shipType",
+        "text": "Ship type",
+        "permanent": true,
+        "register": true
+      },
+      {
+        "id": "responsibleUser",
+        "text": "Responsible Engineer",
+        "required": false,
+        "register": true,
+        "registerText": "Preferred Responsible Engineer",
+        "selectTag": "engineers"
+      },
+      {
+        "id": "qcUser",
+        "text": "Quality Check Engineer",
+        "required": false,
+        "register": true,
+        "registerText": "Preferred Quality Check Engineer",
+        "selectTag": "engineers"
+      },
+      {
+        "id": "deadline",
+        "text": "Deadline",
+        "date": true,
+        "register": true
+      },
+      {
+        "id": "budgetHours",
+        "text": "Budgeted Hours",
+        "required": true,
+        "register": false
+      },
+      {
+        "id": "expectedHours",
+        "text": "Hours expected",
+        "required": false
+      },
+      {
+        "id": "spentHours",
+        "text": "Hours spent",
+        "required": false
+      },
+      {
+        "id": "priority",
+        "text": "Level of Urgency",
+        "selectTag": "priorities",
+        "register": true,
+        "permanent": true
+      }
+    ]
   },
-  "defaultKuset": {
-    "permanent": false,
-    "confirm": false,
-    "required": true,
-    "multi": false,
-    "register": false
-  },
-  "kusets": [
-    {
-      "id": "firstName",
-      "text": "First Name",
-      "permanent": true,
-      "register": true
+  "user": {
+    "configs": {
+      "register": {
+        "tagReq": "register",
+        "allowDuplicates": true,
+        "allowInput": true
+      },
+      "profileEdit": {
+        "allowDuplicates": false,
+        "excludeIds": ["password", "TAC"],
+        "tagEx": ["permanent"],
+        "allowInput": true
+      },
+      "login": {
+        "tagReq": "login",
+        "allowDuplicates": false,
+        "allInput": true
+      }
+
     },
-    {
-      "id": "lastName",
-      "text": "Last Name",
-      "permanent": true,
-      "register": true
+    "defaultKuset": {
+      "required": true
     },
-    {
-      "id": "companyName",
-      "text": "Company Name",
-      "register": true
-    },
-    {
-      "id": "email",
-      "text": "Email",
-      "confirm": true,
-      "email": true,
-      "register": true
-    },
-    {
-      "id": "gmail",
-      "text": "Gmail",
-      "confirm": true,
-      "email": true,
-      "gmail": true,
-      "permanent": true,
-      "register": true
-    },
-    {
-      "id": "skype",
-      "text": "Skype",
-      "required": false
-    },
-    {
-      "id": "phone",
-      "text": "Phone"
-    },
-    {
-      "id": "password",
-      "text": "Password",
-      "confirm": true,
-      "register": true
-    },
-    {
-      "id": "userType",
-      "multi": true,
-      "selText": [
-        "I am an Engineer",
-        "I am a Client"
-      ],
-      "text": "User Type",
-      "ans": [
-        "Engineer",
-        "Client"
-      ],
-      "permanent": true,
-      "register": true
-    },
-    {
-      "id": "TAC",
-      "text": "Terms and Conditions",
-      "TAC": true,
-      "register": true
-    },
-    {
-      "id": "postCode",
-      "text": "Post Code",
-      "required": false
-    },
-    {
-      "id": "address",
-      "text": "Address",
-      "required": false
-    },
-    {
-      "id": "city",
-      "text": "City",
-      "required": false
-    },
-    {
-      "id": "country",
-      "text": "Country",
-      "required": false
-    }
-  ]
+    "kusets": [
+      {
+        "id": "firstName",
+        "text": "First Name",
+        "permanent": true,
+        "register": true
+      },
+      {
+        "id": "lastName",
+        "text": "Last Name",
+        "permanent": true,
+        "register": true
+      },
+      {
+        "id": "email",
+        "text": "Email",
+        "confirm": true,
+        "email": true,
+        "register": true
+      },
+      {
+        "id": "gmail",
+        "text": "Gmail",
+        "confirm": true,
+        "email": true,
+        "gmail": true,
+        "permanent": true,
+        "register": true,
+        "login": true
+      },
+      {
+        "id": "skype",
+        "text": "Skype",
+        "required": false
+      },
+      {
+        "id": "phone",
+        "text": "Phone",
+        "required": false
+      },
+      {
+        "id": "password",
+        "text": "Password",
+        "confirm": true,
+        "register": true,
+        "login": true,
+        "password": true
+      },
+      {
+        "id": "userType",
+        "multi": true,
+        "selText": [
+          "I am an Engineer",
+          "I am a Client"
+        ],
+        "text": "User Type",
+        "ans": [
+          "Engineer",
+          "Client"
+        ],
+        "permanent": true,
+        "register": true
+      },
+      {
+        "id": "company",
+        "text": "Company",
+        "register": true,
+        "permanent": true,
+        "selectTag": "clients"
+      },
+      {
+        "id": "TAC",
+        "text": "Terms and Conditions",
+        "TAC": true,
+        "register": true
+      },
+      {
+        "id": "postCode",
+        "text": "Post Code",
+        "required": false
+      },
+      {
+        "id": "address",
+        "text": "Address",
+        "required": false
+      },
+      {
+        "id": "city",
+        "text": "City",
+        "required": false
+      },
+      {
+        "id": "country",
+        "text": "Country",
+        "required": false
+      },
+      {
+        "id": "dob",
+        "text": "Date of Birth",
+        "date": true,
+        "required": false
+      },
+      {
+        "id": "birthCountry",
+        "text": "Country of Birth",
+        "required": false
+      }
+    ]
+  }
 }

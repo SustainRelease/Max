@@ -1,0 +1,28 @@
+extends layout
+
+block content
+  div.tCenter#users
+    h1.weeVertMargin Engineers
+    table.dataTable#engTable(cellspacing="0")
+      tr.sorted
+        each heading, index in ["Name", "Company", "Email"]
+          th(onclick="w3.sortHTML('#engTable','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+      each user in engineers
+          tr.item
+            td
+              a(href = subR + "/user?id=" + user.id) #{user.firstName} #{user.lastName}
+            td #{user.companyName}
+            td #{user.email}
+    h1.weeVertMargin Clients
+    table.dataTable#clientTable(cellspacing="0")
+      tr.sorted
+        each heading, index in ["Name", "Company", "Email"]
+          th(onclick="w3.sortHTML('#clientTable','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+      each user in clients
+          tr.item
+            td
+              a(href = subR + "/user?id=" + user.id) #{user.firstName} #{user.lastName}
+            td #{user.companyName}
+            td #{user.email}
+
+  script(src="https://www.w3schools.com/lib/w3.js")

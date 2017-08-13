@@ -6,13 +6,13 @@ module.exports = function () {
   //var logger = require('morgan');
   var cookieParser = require('cookie-parser');
   var bodyParser = require('body-parser');
-  var mongoose = require('mongoose');
-  var session = require('express-session');
-  var MongoStore = require('connect-mongo')(session);
+
+  var mongoHelper = require('./node/mongoHelper');
 
   var main = require('./Routes/main');
   var project = require('./Routes/project');
   var profile = require('./Routes/profile');
+  var rest = require("./Routes/rest");
 
   var sites = require('../bin/siteManager.json');
   port = sites.Max.port;
@@ -20,28 +20,19 @@ module.exports = function () {
 
   var app = express();
 
-  /*// mongodb connection
-  /mongoose.connect("mongodb://localhost:27017/max");
-  var db = mongoose.connection;
-  // mongo error
-  db.on('error', console.error.bind(console, 'connection error:')); */
+
 
   // use sessions for tracking logins
-  /*app.use(session({
-    secret: 'pitaya',
-    resave: true,
-    saveUninitialized: false,
-    store: new MongoStore({
-      mongooseConnection: db
-    })
-  }));*/
+  app.use(mongoHelper.makeSession());
 
   // make user ID available in templates
-  /*app.use(function (req, res, next) {
+  app.use(function (req, res, next) {
     res.locals.currentUser = req.session.userId;
     res.locals.subRoute = subRoute;
+    res.locals.subR = subRoute;
+    res.locals.mongoHelper = mongoHelper;
     next();
-  });*/
+  });
 
   // view engine setup
   app.set('views', path.join(__dirname, 'Views'));
@@ -54,10 +45,12 @@ module.exports = function () {
 
   app.use('/staticMax', express.static(__dirname + '/Public'));
 
-  app.use(subRoute, main(subRoute));
-  app.use(subRoute, project(subRoute));
-  app.use(subRoute, profile(subRoute));
-//  app.use(subRoute, authenticate());
+  app.use(subRoute, main());
+  app.use(subRoute, project());
+  app.use(subRoute, profile());
+  app.use(subRoute, rest());
+
+  app.use(favicon(path.join(__dirname, 'Public', 'images', 'Favicon.png')));
 
   app.use(function(req, res, next) {
     var err = new Error('Not Found');

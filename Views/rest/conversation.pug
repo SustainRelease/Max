@@ -1,0 +1,13 @@
+each post in posts
+  div.convo.flex_box
+    div.flex_item
+      p #{post.authorName}
+      p #{post.postTime}
+    div.flex_item
+      p #{post.text}
+div.convo.flex_box
+  div.flex_item
+    img.profile(src= subR + "/REST/profilePic")
+  div.flex_item
+    textArea#postText.vAlign(rows="2" form="publicConvoForm")
+button.weeVertMargin(type="button" onclick="submitPost()") Submit

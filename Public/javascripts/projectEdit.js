@@ -1,6 +1,6 @@
 $(document).ready(function () {
-  formValidator.setup();
-  form = $("#registerForm");
+  formValidator.setup("REST/projectKusets");
+  form = $("#projectForm");
   form.submit(function(event) {
     var nIssues = formValidator.checkAll(true);
     if (nIssues) {

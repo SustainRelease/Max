@@ -1,30 +1,37 @@
 
-var types  = [
-  {
-    "id": "pOngoing",
-    "DOM": document.getElementById("pOngoing"),
-    "name": "Ongoing projects"
+var elements  = {
+  "ongoing": {
+    "BUT": $("#bOngoing"),
+    "TAB": $("#tOngoing"),
+    "Text": "Ongoing"
   },
-  {
-    "id": "pScheduled",
-    "DOM": document.getElementById("pScheduled"),
-    "name": "Scheduled projects"
+  "scheduled": {
+    "BUT": $("#bScheduled"),
+    "TAB": $("#tScheduled"),
+    "Text": "Scheduled"
   },
-  {
-    "id": "pFinished",
-    "DOM": document.getElementById("pFinished"),
-    "name": "Finished projects"
+  "finished": {
+    "BUT": $("#bFinished"),
+    "TAB": $("#tFinished"),
+    "Text": "Finished"
   }
-];
-var title = document.getElementById("tableTitle");
+};
+
+var keys = Object.keys(elements);
+var tableHeading = $("#tableHeading");
 
 function setTable (currentType) {
-  for (var i = 0; i < types.length; i++) {
-    if (types[i].id == currentType) {
-      types[i].DOM.className = "linkBox selected";
-      title.textContent = types[i].name;
+  for (var i = 0; i < keys.length; i++) {
+    let key = keys[i];
+    if (currentType == key) {
+      tableHeading.text(elements[key].Text);
+      elements[key].BUT.addClass("selected");
+      elements[key].TAB.removeClass("hidden");
     } else {
-      types[i].DOM.className = "linkBox";
+      elements[key].BUT.removeClass("selected");
+      elements[key].TAB.addClass("hidden");
     }
   }
 }
+
+setTable("scheduled");

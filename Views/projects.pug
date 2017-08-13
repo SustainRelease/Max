@@ -5,42 +5,89 @@ block content
     nav
       div.flex_box.center.phoVert
         div.flex_item
-          div.linkBox.selected#pOngoing
-            button.clean(onclick="setTable('pOngoing');") Ongoing projects
+          div.linkBox.selected#bScheduled
+            button.clean(onclick="setTable('scheduled');") Scheduled projects
         div.flex_item
-          div.linkBox#pScheduled
-            button.clean(onclick="setTable('pScheduled');") Scheduled projects
+          div.linkBox#bOngoing
+            button.clean(onclick="setTable('ongoing');") Ongoing projects
         div.flex_item
-          div.linkBox#pFinished
-            button.clean(onclick="setTable('pFinished');") Finished projects
+          div.linkBox#bFinished
+            button.clean(onclick="setTable('finished');") Finished projects
     div.table.tCenter
-      div.flex_box.topPart.phoVert
-        div.flex_item.vAlign
-          h1#tableTitle Ongoing projects
-        div.flex_item.vAlign
-          a#proSchedBtn.clean.fancy(href="#") Schedule a project
-      table.dataTable(cellspacing="0")
-        tr
-          th Ship type
-          th Description
-          th Responsible
-          th Quality check
-          th Start Date
-          th End Date
-          th Spent Hours
-          th Expected Hours
-          th Status
-          th Progress
-        each val in [1, 2, 3, 4, 5]
-          tr
-            td FPSO
-            td Crane foudation
-            td Esteban Quiroja
-            td Maximiliano Roth
-            td 6/6/2017 
-            td 15/6/2017
-            td 10
-            td 40
-            td In Progress
-            td 20%
+      if !isEngineer
+        div.flex_box.topPart.phoVert
+          div.flex_item.vAlign
+            h1#tableHeading
+          div.flex_item.vAlign
+            a#proSchedBtn.clean.fancy(href= subR + "/newProject") Schedule a project
+      else
+        div.topPart
+          h1#tableHeading
+      table.dataTable#tScheduled(cellspacing="0")
+        tr.sorted
+          each heading, index in ["Name", "Ship type", "Preferred responsible", "Preferred quality check", "Deadline", "Budget hours", "urgencyIndex", "Level of urgency", "Status"]
+            if (heading == "urgencyIndex")
+              th.hidden #{heading}
+            else
+              if (heading == "Level of urgency")
+                th(onclick="w3.sortHTML('#tScheduled','.item', 'td:nth-child(" + (index) + ")')") #{heading}
+              else 
+                th(onclick="w3.sortHTML('#tScheduled','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+        each project in projects
+          if (project.status == "Scheduled")
+            tr.item
+              td
+                a(href = subR + "/project?id=" + project.id) #{project.title}
+              td #{project.shipType}
+              td
+                a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
+              td
+                a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
+              td #{project.deadline}
+              td #{project.budgetHours}
+              td.hidden #{project.priority}
+              td #{project.priorityName}
+              td #{project.subStatus}
+      table.dataTable#tOngoing(cellspacing="0")
+        tr.sorted
+          each heading, index in ["Name", "Ship type", "Responsible", "Quality check", "Start date", "End date", "Spent hours", "Expected hours", "Status", "Progress"]
+            th(onclick="w3.sortHTML('#tOngoing','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+        each project in projects
+          if (project.status == "Ongoing")
+            tr.item
+              td
+                a(href = subR + "/project?id=" + project.id) #{project.title}
+              td #{project.shipType}
+              td
+                a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
+              td
+                a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
+              td #{project.startDate}
+              td #{project.endDate}
+              td #{project.spentHours}
+              td #{project.expectedHours}
+              td #{project.status}
+              td #{project.progress}%
+      table.dataTable#tFinished(cellspacing="0")
+        tr.sorted
+          each heading, index in ["Name", "Ship type", "Responsible", "Quality check", "Start date", "End date", "Spent hours", "Expected hours", "Status", "Progress"]
+            th(onclick="w3.sortHTML('#tFinished','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+        each project in projects
+          if (project.status == "Finished")
+            tr.item
+              td
+                a(href = subR + "/project?id=" + project.id) #{project.title}
+              td #{project.shipType}
+              td
+                a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
+              td
+                a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
+              td #{project.startDate}
+              td #{project.endDate}
+              td #{project.spentHours}
+              td #{project.expectedHours}
+              td #{project.status}
+              td #{project.progress}%
+  script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
+  script(src="https://www.w3schools.com/lib/w3.js")
   script(type="text/javascript" src="/staticMax/javascripts/projects.js")

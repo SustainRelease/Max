@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  div#userEdit.main
+    h1.tCenter #{user.firstName} #{user.lastName}
+    h2.tCenter Edit Profile
+    div.block
+      img#profile_pic(src= subR + "/REST/profilePic")
+      form(action=subR + "/profPicUpload" method="post" enctype="multipart/form-data")
+        input.weeVertMargin(type="file" name="filetoupload")
+        br
+        input(type="submit" value="Submit")
+    if (user.gmail)
+      div.block
+        p Gmail: #{user.gmail}
+        p Company: #{user.companyName}
+    include ./partials/_form.pug

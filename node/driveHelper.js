@@ -14,20 +14,69 @@ var googleAuth = require('google-auth-library');
 var Promise = require('promise');
 
 var auth;
+var masterFolderId = "0B_vUIo8iD_BvVHRweTRsX2Nmcnc";
 var projectFolderId;
 var currentFolderId;
 var fields = "id, name, mimeType, parents, modifiedTime";
 var tidyFunction = function (file) {return file;};
 
 
+function createProjectFolder(projectId, name, description) {
+  return new Promise (function(fulfill, reject) {
+    var fileMetadata = {
+      'name' : projectId,
+      'description': name + " - " + description,
+      'mimeType' : 'application/vnd.google-apps.folder',
+      'parents': [masterFolderId],
+    };
+    service.files.create({
+       resource: fileMetadata,
+       fields: 'id',
+       auth: auth
+    }, function(err, file) {
+      if(err) {
+        // Handle error
+        console.error(err);
+        reject(err);
+      } else {
+        projectFolderId = file.id;
+        fulfill(file.id);
+      }
+    });
+  });
+}
+
+
+function addPermission (folderId, gmail) {
+  return new Promise (function (fulfill, reject) {
+    var permResource = {
+      //"kind": "drive#permission",
+      "type": "user",
+      "emailAddress": gmail,
+      "role": "writer"
+    }
+    service.permissions.create({
+      fileId: folderId,
+      auth: auth,
+      resource: permResource
+    }, function (err, response) {
+      if (err) reject(err);
+      else fulfill(response);
+    });
+  });
+}
+
+
+
 function getProjectFolderId() {
   return projectFolderId;
 }
 
-function init(secretPath, fieldsIn, tidyFunctionIn, projectFolderName) {
+function init(secretPath, fieldsIn, tidyFunctionIn, projectFolderName, PFId) {
   return new Promise (function (fulfill, reject) {
     if(fieldsIn) {fields = fieldsIn;}
     if(tidyFunctionIn) {tidyFunction = tidyFunctionIn;}
+    if(PFId) {projectFolderId = PFId};
     getAuth(secretPath).then(function (res) {
       if (projectFolderName) {
         getProjectFolder(projectFolderName).then(function (projectFolder) {
@@ -196,7 +245,6 @@ function getAuth(secretPath, scopes) {
           });
         } else {
           console.log("Current token found at " + TOKEN_PATH);
-          console.log(token);
           oauth2Client.credentials = JSON.parse(token);
           auth = oauth2Client;
           fulfill(auth);
@@ -260,6 +308,13 @@ function checkAuth() {
   }
 }
 
+function setProjectFolder(PFId) {
+  projectFolderId = PFId;
+}
+
+module.exports.createProjectFolder = createProjectFolder;
 module.exports.getProjectFiles = getProjectFiles;
 module.exports.getProjectFolderId = getProjectFolderId;
 module.exports.init = init;
+module.exports.addPermission = addPermission;
+module.exports.setProjectFolder = setProjectFolder;

@@ -1,0 +1,62 @@
+div.tCenter.form
+  form(id=formData.name method="post" action= subR + formData.submitPath)
+    table
+      each kuset in formData.vals
+        if (kuset.select)
+          tr
+            td
+              if (kuset.required)
+                label(for=kuset.id) #{kuset.text}*
+              else
+                label(for=kuset.id) #{kuset.text}
+            td
+              select(id=kuset.id, name=kuset.id)
+                option(value="null") ---
+                each opt in kuset.selectData
+                  option(value=opt.id) #{opt.text}
+            td.issueText
+        else
+          if (kuset.multi)
+            each selText, i in kuset.selText
+              tr
+                td
+                  if (i)
+                    input(type="radio" name=kuset.id value=i checked)
+                  else
+                    input(type="radio" name=kuset.id value=i)
+                td
+                  label #{selText}
+          else
+            tr
+              if (kuset.TAC)
+                td
+                  input(type="checkbox" id=kuset.id value="agree")
+                td.tLeft
+                  label I have read and agreed to the<br />
+                  a(href="#") terms and conditions
+              else
+                if (kuset.permanent && kuset.value)
+                  td=kuset.text + ":"
+                  td=kuset.value
+                else
+                  td
+                    if (kuset.date)
+                      if (kuset.required)
+                        label(for=kuset.id) #{kuset.text} (dd/mm/yyyy)*
+                      else
+                        label(for=kuset.id) #{kuset.text} (dd/mm/yyyy)
+                    else
+                      if (kuset.required)
+                        label(for=kuset.id) #{kuset.text}*
+                      else
+                        label(for=kuset.id) #{kuset.text}
+                  td
+                    input(id=kuset.id, name=kuset.id type="text" value=kuset.value)
+              td.issueText         
+    input.submit(type="submit" value= formData.submitText)
+    if formData.cancelPath
+      button
+        a.clean(href= subRoute + formData.cancelPath) Cancel
+script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
+script(type="text/javascript" src="/staticMax/javascripts/formValidator.js")
+script(type="text/javascript" src="/staticMax/javascripts/" + formData.scriptName + ".js")

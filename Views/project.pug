@@ -3,84 +3,76 @@ extends layout
 block content
   div#project.main
     div.block.tCenter
-      h1 FPSO­CRANE FOUNDATION CALCULATION
+      h1 #{projectData.title}
     div.block
       h2.topBit Description
-      p Check the crane foundation by means of plate elements, in order to present hte document to BV. Use load and safety factors from BV NR465. Any other specific requirement
-    div.block
-      h2.topBit Summary
-      table.dataTable.fullWidth
-        tr
-          th Responsible
-          th Quality check
-          th Start Date
-          th End Date
-          th Spent hours
-          th Expected Hours
-          th Status
-          th Progress
-        tr
-          td Esteban Quiroga
-          td Maximiliano Roth
-          td 6/6/2017
-          td 15/6/2017
-          td 70
-          td 40
-          td Modifications
-          td 60
-      progress(value="60" max="100")
-    div.block
-      div.flex_box.vAlign.topBit
-        div.flex_item
-          h2 History
-        div.flex_item
-          a.clean.fancy Request Invoice
-      table.dataTable.fullWidth
-        tr
-          th Requested Date
-          th Description
-          th Status
-        tr
-          td 06/06/2017
-          td Initiated task
-          td Done
-        tr
-          td 08/06/2017
-          td Finished CAE geometry
-          td Done
-        tr
-          td 09/06/2017
-          td Finished meshing
-          td Done
-        tr
-          td 12/06/2017
-          td Internal check preliminary results
-          td Internal Approved
-        tr
-          td 13/06/2017
-          td Client check ­ Update geometry based on latest input
-          td
-            button Approve
-            button Modify
-    div.block
-      h2.topBit Conversation
-      div
-        each name in ["Esteban", "Client", "Client", "Maximiliano"]
-          div.convo.flex_box
-            div.flex_item
-              p=name
-              p 01/06/2017
-            div.flex_item
-              p Check the crane foundation by means of plate elements, in order to present the document to BV. Use load and safety factors from BV NR465. Any other specific requirement    
-        div.convo.flex_box
+      p #{projectData.description}
+    if (projectData.locked)
+      div.block.tCenter
+        b #{projectData.lockReason}
+    else
+      div.block
+        h2.topBit Summary
+        table.dataTable.fullWidth
+          tr
+            th Responsible
+            th Quality check
+            th Start Date
+            th End Date
+            th Spent hours
+            th Expected Hours
+            th Status
+            th Progress
+          tr
+            td
+              a(href = subR + "/user?id=" + projectData.responsibleUser) #{projectData.responsibleUserName}
+            td
+              a(href = subR + "/user?id=" + projectData.qcUser) #{projectData.qcUserName}
+            td #{projectData.startDate}
+            td #{projectData.endDate}
+            td #{projectData.spentHours}
+            td #{projectData.expectedHours}
+            td #{projectData.status}
+            td #{projectData.progress}
+        progress(value=projectData.progress max="100")
+      div.block
+        div.flex_box.vAlign.topBit
           div.flex_item
-            img.profile(src="/staticMax/images/Profile.PNG")
+            h2 History
           div.flex_item
-            textArea.vAlign(rows="2" form="publicConvoForm")
-      form(method="post" id="publicConvoForm")
-        input(type="submit" value="Submit")
-      
-    div.block
-      h2.topBit File Sharing
-      div#fileShare
-    script(type="text/javascript" src="/staticMax/javascripts/project.js")
+            a.clean.fancy Request Invoice
+        table.dataTable.fullWidth
+          tr
+            th Requested Date
+            th Description
+            th Status
+          tr
+            td 06/06/2017
+            td Initiated task
+            td Done
+          tr
+            td 08/06/2017
+            td Finished CAE geometry
+            td Done
+          tr
+            td 09/06/2017
+            td Finished meshing
+            td Done
+          tr
+            td 12/06/2017
+            td Internal check preliminary results
+            td Internal Approved
+          tr
+            td 13/06/2017
+            td Client check ­ Update geometry based on latest input
+            td
+              button Approve
+              button Modify
+      div.block
+        h2.topBit Conversation
+        div#conversation
+      div.block
+        h2.topBit File Sharing
+        div#fileShare
+      script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
+      script(type="text/javascript" src="/staticMax/javascripts/project.js")

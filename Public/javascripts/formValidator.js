@@ -2,25 +2,49 @@ buildFormValidator = function () {
   var formVals;
   var inputs = [];
   var form;
+  var freePass = {};
 
   var my = {};
 
-  my.setup = function () {
-    $.getJSON( "REST/kusets", function(data) {
+  my.setup = function (kusetPath, specialHandlers) {
+    $.getJSON(kusetPath, function(data) {
       formVals = data;
       for (let i = 0; i < formVals.length; i++) {
-        inputs[i] = $("#" + formVals[i].id);
-        if (formVals[i].duplicate) {
+        freePass[formVals[i].id] = false;
+        let specHandler = getSpecHandler(specialHandlers, formVals[i].id);
+        if (formVals[i].multi) {
+          freePass[formVals[i].id] = true;
+          var nMultis = formVals[i].ans.length;
+          inputs[i] = [];
           let handler = function () {
-            checkIssues(i-1);
-            checkIssues(i);
+            var val = formVals[i].ans[this.value];
+            if (specHandler) specHandler(val, freePass);
           }
-          setHandler(i, handler);
-          setHandler(i-1, handler);
+          $('input:radio[name=' + formVals[i].id + ']').change(handler);
         } else {
-          setHandler(i, function ()  {
-            checkIssues(i);
-          });
+          inputs[i] = $("#" + formVals[i].id);
+          if (formVals[i].duplicate) {
+            let handler = function () {
+              checkIssues(i-1);
+              checkIssues(i);
+              if (specHandler) specHandler(inputs[i].val(), freePass);
+            }
+            setHandler(i, handler);
+            setHandler(i-1, handler);
+          } else {
+            let handler = function () {
+              checkIssues(i);
+              if (specHandler) specHandler(inputs[i].val(), freePass);
+            }
+            setHandler(i, handler);
+          }
+        }
+        //Add existing values of select elements
+        if (formVals[i].select) {
+          if (formVals[i].value) {
+            var selector = ("#" + formVals[i].id + ' option[value="' + formVals[i].value + '"]');
+            $(selector).prop('selected', true);
+          }
         }
       }
     });
@@ -40,14 +64,22 @@ buildFormValidator = function () {
     return nIssues;
   }
 
+  function getSpecHandler (specialHandlers, id) {
+    if (specialHandlers) {
+      if (specialHandlers[id]) {
+        return specialHandlers[id];
+      }
+    }
+    return null;
+  }
+
   function setHandler(i, handler) {
     inputs[i].focusout(handler);
     inputs[i].change(handler);
   }
 
-
   function checkIssues (i) {
-    if (formVals[i].multi) {
+    if (freePass[formVals[i].id]) {
       return 0;
     }
     var val = inputs[i].val();
@@ -55,9 +87,15 @@ buildFormValidator = function () {
       if (!inputs[i].is(':checked')) {
         setIssue(i, {type: "tacReq", text: "You must agree"})
         return 1;
+      } else {
+        return 0;
       }
-      clearIssues(i);
-      return 0;
+    }
+    if (formVals[i].date) {
+      if (!isValidDate(val)) {
+        setIssue(i, {type: "dateError", text: "Invalid date"});
+        return 1;
+      }
     }
     if (formVals[i].duplicate) {
       if (val != inputs[i-1].val()) {
@@ -66,9 +104,16 @@ buildFormValidator = function () {
       }
     }
     if (formVals[i].required) {
-      if (!val) {
-        setIssue(i, {type: "fieldRequired", text: "Required field"});
-        return 1;
+      if (formVals[i].select) {
+        if (val == "null") {
+          setIssue(i, {type: "fieldRequired", text: "Required field"});
+          return 1;
+        }
+      } else {
+        if (!val) {
+          setIssue(i, {type: "fieldRequired", text: "Required field"});
+          return 1;
+        }
       }
     }
     if (formVals[i].email) {
@@ -102,5 +147,31 @@ buildFormValidator = function () {
 
   return my;
 }
+
+function isValidDate(dateString)
+{
+    // First check for the pattern
+    if(!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString))
+        return false;
+
+    // Parse the date parts to integers
+    var parts = dateString.split("/");
+    var day = parseInt(parts[0], 10);
+    var month = parseInt(parts[1], 10);
+    var year = parseInt(parts[2], 10);
+
+    // Check the ranges of month and year
+    if(year < 1000 || year > 3000 || month == 0 || month > 12)
+        return false;
+
+    var monthLength = [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+
+    // Adjust for leap years
+    if(year % 400 == 0 || (year % 100 != 0 && year % 4 == 0))
+        monthLength[1] = 29;
+
+    // Check the range of the day
+    return day > 0 && day <= monthLength[month - 1];
+};
 
 formValidator = buildFormValidator();
