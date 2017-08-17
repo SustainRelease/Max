@@ -1,3 +1,6 @@
+var History = require("../models/history.js");
+var Project = require("../models/project.js");
+
 function checkLoggedIn(req, res, next) {
   if (req.session && req.session.userId) {
     return res.locals.mongoHelper.doesDocExist("User", req.session.userId).then(function (doesExist) {
@@ -57,34 +60,32 @@ function getUserStatus(req, res, next) {
   });
 }
 
-function getNotifications(req, res, next) {
-  function getAdminNot () {
-    return new Promise (function(fulfill, reject) {
-      if (res.locals.isAdmin) {
-        var query = {"subStatus": "Pending approval"};
-        var projection = {"title": true, "setupDate": true};
-        res.locals.mongoHelper.getDocs("Project", query, projection).then(function(docs) {
-          if (!docs) {
-            fulfill(null);
-          } else {
-            var adminNots = [];
-            for (var i = 0; i < docs.length; i++) {
-              adminNots[i] = {title: docs[i].title, date: docs[i].setupDate, path: "/project?id=" + docs[i].id}
-            }
-            fulfill(adminNots);
-          }
-        }, function(reason) {
-          console.error(reason);
-          next(reason);
-        });
+function accessProject(req, res, next) {
+  if (!req.query.id) {
+    var err = new Error ("No project Id found");
+    console.error(err);
+    next(err);
+  } else {
+    var projectId = req.query.id;
+    res.locals.projectId = projectId;
+    res.locals.mongoHelper.docPermission(Project, projectId, req.session.userId).then(function(allowAccess) {
+      if(!allowAccess) {
+        console.error("Access to project " + projectId + " denied to user " + req.session.userId);
+        next(new Error ("Access to project denied"));
       } else {
-        fulfill(null);
+        next();
       }
     });
   }
-  getAdminNot().then(function(adminNots) {
-    console.log("Admin notifications:");
-    console.log(adminNots);
+}
+
+function getNotifications(req, res, next) {
+  return History.getNotifications(req.session.userId).then(function (histories) {
+    res.notifications = histories;
+    next();
+  }, function(reason) {
+    console.error(reason);
+    next(reason);
   });
 }
 
@@ -95,3 +96,4 @@ module.exports.checkAdmin = checkAdmin;
 
 module.exports.getNotifications = getNotifications;
 module.exports.getUserStatus = getUserStatus;
+module.exports.accessProject = accessProject;

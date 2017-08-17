@@ -14,10 +14,10 @@ module.exports = function () {
       var selectData = {clients: clients};
       var formVals = kusetManager.getFormVals("register", null, selectData);
       var formData = {name: "userForm", scriptName: "userNew", submitText: "Submit", submitPath: "/register", vals: formVals};
-      var pugData = {formData: formData}
+      var pugData = {formData: formData, loggedOut: true}
       res.render('userNew', pugData);
     });
-  });
+  })
 
   router.get('/REST/userKusets', function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');

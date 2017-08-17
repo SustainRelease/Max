@@ -20,8 +20,6 @@ module.exports = function () {
 
   var app = express();
 
-
-
   // use sessions for tracking logins
   app.use(mongoHelper.makeSession());
 

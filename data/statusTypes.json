@@ -17,5 +17,15 @@
   },
   "Finished": {
 
-  }
+  },
+  "History": [
+    "In progress",
+    "Waiting client approval",
+    "Client approved",
+    "Waiting internal approval",
+    "Internal approved",
+    "Modifications required",
+    "Done"
+  ]
+
 }

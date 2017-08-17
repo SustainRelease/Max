@@ -72,20 +72,12 @@ function getProjectFolderId() {
   return projectFolderId;
 }
 
-function init(secretPath, fieldsIn, tidyFunctionIn, projectFolderName, PFId) {
+function init(secretPath, fieldsIn, tidyFunctionIn) {
   return new Promise (function (fulfill, reject) {
     if(fieldsIn) {fields = fieldsIn;}
     if(tidyFunctionIn) {tidyFunction = tidyFunctionIn;}
-    if(PFId) {projectFolderId = PFId};
     getAuth(secretPath).then(function (res) {
-      if (projectFolderName) {
-        getProjectFolder(projectFolderName).then(function (projectFolder) {
-          projectFolderId = projectFolder.id;
-          fulfill(projectFolderId);
-        });
-      } else {
-        fulfill(projectFolderId);
-      }
+      fulfill();
     });
   });
 }
