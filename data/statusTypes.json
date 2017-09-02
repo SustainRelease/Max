@@ -20,12 +20,13 @@
   },
   "History": [
     "In progress",
+    "Done",
     "Waiting client approval",
     "Client approved",
     "Waiting internal approval",
     "Internal approved",
     "Modifications required",
-    "Done"
+    "Internal rejected"
   ]
 
 }

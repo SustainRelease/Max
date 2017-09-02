@@ -13,61 +13,14 @@ block content
     else
       div.block
         h2.topBit Summary
-        table.dataTable.fullWidth
-          tr
-            th Responsible
-            th Quality check
-            th Start Date
-            th End Date
-            th Spent hours
-            th Expected Hours
-            th Status
-            th Progress
-          tr
-            td
-              a(href = subR + "/user?id=" + projectData.responsibleUser) #{projectData.responsibleUserName}
-            td
-              a(href = subR + "/user?id=" + projectData.qcUser) #{projectData.qcUserName}
-            td #{projectData.startDate}
-            td #{projectData.endDate}
-            td #{projectData.spentHours}
-            td #{projectData.expectedHours}
-            td #{projectData.status}
-            td #{projectData.progress}
-        progress(value=projectData.progress max="100")
+        div#projectSummary
       div.block
         div.flex_box.vAlign.topBit
           div.flex_item
-            h2 History
+            h2.weeVertMargin History
           div.flex_item
-            a.clean.fancy Request Invoice
-        table.dataTable.fullWidth
-          tr
-            th Requested Date
-            th Description
-            th Status
-          tr
-            td 06/06/2017
-            td Initiated task
-            td Done
-          tr
-            td 08/06/2017
-            td Finished CAE geometry
-            td Done
-          tr
-            td 09/06/2017
-            td Finished meshing
-            td Done
-          tr
-            td 12/06/2017
-            td Internal check preliminary results
-            td Internal Approved
-          tr
-            td 13/06/2017
-            td Client check ­ Update geometry based on latest input
-            td
-              button Approve
-              button Modify
+            a.clean.fancy.weeVertMargin Request Invoice
+        div#histories
       div.block
         h2.topBit Conversation
         div#conversation
@@ -75,4 +28,5 @@ block content
         h2.topBit File Sharing
         div#fileShare
       script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
+      script(type="text/javascript" src="/staticMax/javascripts/formValidator.js")
       script(type="text/javascript" src="/staticMax/javascripts/project.js")

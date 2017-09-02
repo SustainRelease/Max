@@ -47,6 +47,25 @@ function createProjectFolder(projectId, name, description) {
 }
 
 
+function listPermissions (folderId) {
+//WHY DOESN'T THIS WORK
+  return new Promise (function (fulfill, reject) {
+    service.permissions.list({
+      fileId: folderId,
+      auth: auth
+    }, function (err, response) {
+      if (err) {
+        console.error(err);
+        reject(err);
+      } else {
+        console.log("Permissions");
+        console.log(response);
+        fulfill(response);
+      }
+    });
+  });
+}
+
 function addPermission (folderId, gmail) {
   return new Promise (function (fulfill, reject) {
     var permResource = {
@@ -157,6 +176,8 @@ function getFile (queryObj, fields) {
     return getSingleItem(files);
   });
 }
+
+
 
 function getFileById(id) {
   return new Promise(function (fulfill, reject) {
@@ -309,4 +330,5 @@ module.exports.getProjectFiles = getProjectFiles;
 module.exports.getProjectFolderId = getProjectFolderId;
 module.exports.init = init;
 module.exports.addPermission = addPermission;
+module.exports.listPermissions = listPermissions;
 module.exports.setProjectFolder = setProjectFolder;

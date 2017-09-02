@@ -3,12 +3,14 @@ buildFormValidator = function () {
   var inputs = [];
   var form;
   var freePass = {};
-
   var my = {};
 
   my.setup = function (kusetPath, specialHandlers) {
     $.getJSON(kusetPath, function(data) {
       formVals = data;
+      if (!formVals) {
+        console.error("Form values not found");
+      }
       for (let i = 0; i < formVals.length; i++) {
         freePass[formVals[i].id] = false;
         let specHandler = getSpecHandler(specialHandlers, formVals[i].id);
@@ -48,6 +50,20 @@ buildFormValidator = function () {
         }
       }
     });
+  }
+
+  my.extractAll = function() {
+    var exVals = {};
+    for (let i = 0; i < formVals.length; i++) {
+      if (formVals[i].multi) {
+        var index = $('input[name=' + formVals[i].id + ']:checked').val();
+        var val = formVals[i].ans[index];
+      } else {
+        var val = inputs[i].val();
+      }
+      exVals[formVals[i].id] = val;
+    }
+    return exVals;
   }
 
   my.checkAll = function(doReport) {

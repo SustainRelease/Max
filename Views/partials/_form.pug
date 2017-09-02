@@ -21,9 +21,9 @@ div.tCenter.form
               tr
                 td
                   if (i)
-                    input(type="radio" name=kuset.id value=i checked)
-                  else
                     input(type="radio" name=kuset.id value=i)
+                  else
+                    input(type="radio" name=kuset.id value=i checked)
                 td
                   label #{selText}
           else
@@ -52,11 +52,12 @@ div.tCenter.form
                         label(for=kuset.id) #{kuset.text}
                   td
                     input(id=kuset.id, name=kuset.id type="text" value=kuset.value)
-              td.issueText         
+              td.issueText
     input.submit(type="submit" value= formData.submitText)
     if formData.cancelPath
       button
         a.clean(href= subRoute + formData.cancelPath) Cancel
-script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
-script(type="text/javascript" src="/staticMax/javascripts/formValidator.js")
-script(type="text/javascript" src="/staticMax/javascripts/" + formData.scriptName + ".js")
+if !formData.noScripts
+  script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
+  script(type="text/javascript" src="/staticMax/javascripts/formValidator.js")
+  script(type="text/javascript" src="/staticMax/javascripts/" + formData.scriptName + ".js")

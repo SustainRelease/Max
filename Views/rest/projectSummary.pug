@@ -1,0 +1,22 @@
+table.dataTable.fullWidth
+  tr
+    th Responsible
+    th Quality check
+    th Start Date
+    th End Date
+    th Spent hours
+    th Expected Hours
+    th Status
+    th Progress
+  tr
+    td
+      a(href = subR + "/user?id=" + projectData.responsibleUser) #{projectData.responsibleUserName}
+    td
+      a(href = subR + "/user?id=" + projectData.qcUser) #{projectData.qcUserName}
+    td #{projectData.startDate}
+    td #{projectData.endDate}
+    td #{projectData.spentHours}
+    td #{projectData.expectedHours}
+    td #{projectData.status}
+    td #{projectData.progress}%
+progress(value=projectData.progress max="100")

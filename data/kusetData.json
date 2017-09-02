@@ -38,6 +38,7 @@
         "id": "responsibleUser",
         "text": "Responsible Engineer",
         "required": false,
+        "projectEditReq": true,
         "register": true,
         "registerText": "Preferred Responsible Engineer",
         "selectTag": "engineers"
@@ -46,6 +47,7 @@
         "id": "qcUser",
         "text": "Quality Check Engineer",
         "required": false,
+        "projectEditReq": true,
         "register": true,
         "registerText": "Preferred Quality Check Engineer",
         "selectTag": "engineers"
@@ -78,6 +80,49 @@
         "selectTag": "priorities",
         "register": true,
         "permanent": true
+      }
+    ]
+  },
+  "history": {
+    "configs": {
+      "register": {
+        "allowInput": true
+      }
+    },
+    "defaultKuset": {
+      "permanent": true,
+      "required": true,
+      "register": true
+    },
+    "kusets": [
+      {
+        "id": "text",
+        "text": "Description"
+      },
+      {
+        "id": "spentHours",
+        "text": "Spent Hours",
+        "isNumber": true
+      },
+      {
+        "id": "totalProgress",
+        "text": "Total Progress",
+        "isPercentage": true
+      },
+      {
+        "id": "actionReq",
+        "text": "Action Required",
+        "multi": true,
+        "selText": [
+          "None",
+          "Request client approval",
+          "Request internal approval"
+        ],
+        "ans": [
+          "None",
+          "Client",
+          "Internal"
+        ]
       }
     ]
   },

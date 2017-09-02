@@ -13,9 +13,17 @@ module.exports = function () {
     res.redirect(res.locals.subRoute + '/login');
   });
 
-  router.get('/notifications', mid.checkLoggedIn, mid.getUserStatus, mid.getNotifications, function(req, res, next) {
-    console.log("Notifications:");
-    console.log(res.notifications);
+  router.get('/todo', function (req, res, next) {
+    var messages = [
+      "Drive sharing only to be added on project approval",
+      "Reviews",
+      "Calendar sharing",
+      "Extra profile stuff",
+      "Admin screen (Create companies)"
+    ];
+    var title = "To do";
+    var pugData = {title: title, messages: messages};
+    res.render('message', pugData);
   });
 
   return router;

@@ -48,8 +48,8 @@ a.fancy {
 
 a.fancy:hover {
   background-color: hsl(100,80%,60%);
+  cursor: pointer;
 }
-
 
 button.clean {
   background-color: inherit;
@@ -67,6 +67,20 @@ button.link {
 }
 button.link:hover {
   color: green;
+}
+button.cancel {
+  color: white;
+  font-weight: bolder;
+  border-radius: 10px;
+  border: none;
+  margin: auto;
+  background-color: grey;
+}
+button.cancel:hover {
+  background-color: red;
+}
+button.cancel:focus {
+  outline: 0;
 }
 
 div.main {
@@ -242,6 +256,31 @@ table.dataTable tr:first-child {
 table.dataTable tr.sorted th:hover {
   background-color: #CCC;
   cursor: pointer;
+}
+
+table.dataTable .ghost {
+  background-color: white;
+  border-top: 1px solid white;
+  border-right: 2px solid white;
+  border-bottom: 1px solid white;
+  border-left: 2px solid black;
+}
+
+table.dataTable th.ghost {
+  border-top: 2px solid white;
+  border-bottom: 2px solid white;
+}
+
+table.dataTable tr:last-child td.ghost {
+  border-bottom: 2px solid white;
+}
+
+table.dataTable td.ghost button {
+  opacity: 0.1;
+}
+
+table.dataTable td.ghost button:hover {
+  opacity: 1;
 }
 
 

@@ -23,71 +23,80 @@ block content
       else
         div.topPart
           h1#tableHeading
-      table.dataTable#tScheduled(cellspacing="0")
-        tr.sorted
-          each heading, index in ["Name", "Ship type", "Preferred responsible", "Preferred quality check", "Deadline", "Budget hours", "urgencyIndex", "Level of urgency", "Status"]
-            if (heading == "urgencyIndex")
-              th.hidden #{heading}
-            else
-              if (heading == "Level of urgency")
-                th(onclick="w3.sortHTML('#tScheduled','.item', 'td:nth-child(" + (index) + ")')") #{heading}
-              else 
-                th(onclick="w3.sortHTML('#tScheduled','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
-        each project in projects
-          if (project.status == "Scheduled")
-            tr.item
-              td
-                a(href = subR + "/project?id=" + project.id) #{project.title}
-              td #{project.shipType}
-              td
-                a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
-              td
-                a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
-              td #{project.deadline}
-              td #{project.budgetHours}
-              td.hidden #{project.priority}
-              td #{project.priorityName}
-              td #{project.subStatus}
-      table.dataTable#tOngoing(cellspacing="0")
-        tr.sorted
-          each heading, index in ["Name", "Ship type", "Responsible", "Quality check", "Start date", "End date", "Spent hours", "Expected hours", "Status", "Progress"]
-            th(onclick="w3.sortHTML('#tOngoing','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
-        each project in projects
-          if (project.status == "Ongoing")
-            tr.item
-              td
-                a(href = subR + "/project?id=" + project.id) #{project.title}
-              td #{project.shipType}
-              td
-                a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
-              td
-                a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
-              td #{project.startDate}
-              td #{project.endDate}
-              td #{project.spentHours}
-              td #{project.expectedHours}
-              td #{project.status}
-              td #{project.progress}%
-      table.dataTable#tFinished(cellspacing="0")
-        tr.sorted
-          each heading, index in ["Name", "Ship type", "Responsible", "Quality check", "Start date", "End date", "Spent hours", "Expected hours", "Status", "Progress"]
-            th(onclick="w3.sortHTML('#tFinished','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
-        each project in projects
-          if (project.status == "Finished")
-            tr.item
-              td
-                a(href = subR + "/project?id=" + project.id) #{project.title}
-              td #{project.shipType}
-              td
-                a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
-              td
-                a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
-              td #{project.startDate}
-              td #{project.endDate}
-              td #{project.spentHours}
-              td #{project.expectedHours}
-              td #{project.status}
-              td #{project.progress}%
+      div#tScheduled
+        if sProjects.length > 0
+          table.dataTable(cellspacing="0")
+            tr.sorted
+              each heading, index in ["Name", "Ship type", "Preferred responsible", "Preferred quality check", "Deadline", "Budget hours", "urgencyIndex", "Level of urgency", "Status"]
+                if (heading == "urgencyIndex")
+                  th.hidden #{heading}
+                else
+                  if (heading == "Level of urgency")
+                    th(onclick="w3.sortHTML('#tScheduled','.item', 'td:nth-child(" + (index) + ")')") #{heading}
+                  else 
+                    th(onclick="w3.sortHTML('#tScheduled','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+            each project in sProjects
+              tr.item
+                td
+                  a(href = subR + "/project?id=" + project.id) #{project.title}
+                td #{project.shipType}
+                td
+                  a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
+                td
+                  a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
+                td #{project.deadline}
+                td #{project.budgetHours}
+                td.hidden #{project.priority}
+                td #{project.priorityName}
+                td #{project.subStatus}
+        else
+          i No scheduled projects
+      div#tOngoing.hidden
+        if oProjects.length > 0
+          table.dataTable(cellspacing="0")
+            tr.sorted
+              each heading, index in ["Name", "Ship type", "Responsible", "Quality check", "Start date", "End date", "Spent hours", "Expected hours", "Status", "Progress"]
+                th(onclick="w3.sortHTML('#tOngoing','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+            each project in oProjects
+              tr.item
+                td
+                  a(href = subR + "/project?id=" + project.id) #{project.title}
+                td #{project.shipType}
+                td
+                  a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
+                td
+                  a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
+                td #{project.startDate}
+                td #{project.endDate}
+                td #{project.spentHours}
+                td #{project.expectedHours}
+                td #{project.status}
+                td #{project.progress}%
+        else
+          i No ongoing projects
+      div#tFinished.hidden
+        if fProjects.length > 0
+          table.dataTable(cellspacing="0")
+            tr.sorted
+              each heading, index in ["Name", "Ship type", "Responsible", "Quality check", "Start date", "End date", "Spent hours", "Expected hours", "Status", "Progress"]
+                th(onclick="w3.sortHTML('#tFinished','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+            each project in fProjects
+              tr.item
+                td
+                  a(href = subR + "/project?id=" + project.id) #{project.title}
+                td #{project.shipType}
+                td
+                  a(href = subR + "/user?id=" + project.responsibleUser) #{project.responsibleUserName}
+                td
+                  a(href = subR + "/user?id=" + project.qcUser) #{project.qcUserName}
+                td #{project.startDate}
+                td #{project.endDate}
+                td #{project.spentHours}
+                td #{project.expectedHours}
+                td #{project.status}
+                td #{project.progress}%
+        else
+          i No finished projects
   script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
   script(src="https://www.w3schools.com/lib/w3.js")
   script(type="text/javascript" src="/staticMax/javascripts/projects.js")

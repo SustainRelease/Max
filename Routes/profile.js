@@ -35,6 +35,10 @@ module.exports = function () {
     });
   });
 
+  router.get('/notifications', mid.checkLoggedIn, mid.getNotifications, function(req, res, next) {
+    res.render('notifications');
+  });
+
   router.get('/users', mid.checkLoggedIn, mid.getUserStatus, function(req, res, next) {
     res.locals.mongoHelper.getDocs(User, {"isClient": false}).then(function(engineers) {
       if (res.locals.isEngineer) {

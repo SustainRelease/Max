@@ -21,7 +21,37 @@ var multiPromise = require("../node/multiPromise.js");
 var db = setUpMongo("navalis", false);
 var myDriveHelper = require("../node/myDriveHelper.js");
 
-var masterMail = "sirrobbiemuir@gmail.com"
+var adminMail = require("../data/adminData.json").gmail;
+var adminId;
+
+function getAdminId() {
+  return adminId;
+}
+
+function initAdmin () {
+  findAdminId().then(function(aid) {
+    console.log("Admin Id found: " + aid);
+    adminId = aid;
+  }, function(reason) {
+    console.log("Admin Id not found");
+  });
+}
+
+function findAdminId() {
+  return new Promise (function (fulfill, reject) {
+    getOneDoc(User, {"gmail": adminMail}, {"_id": true}).then(function (doc) {
+      if (doc) {
+        fulfill(doc.id);
+      } else {
+        console.log("Admin id not found");
+        reject()
+      }
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
+}
 
 function shallowCopy (k1) {
   let keys = Object.keys(k1);
@@ -278,6 +308,33 @@ function addPost (convoId, text, userId) {
 }
 
 //-------------------PROJECTS----------------------
+function resolveProjectHistories (projectId) {
+  return new Promise(function (fulfill, reject) {
+    var query = {"project": projectId};
+    var projection = {"totalProgress": true};
+    getDocs(History, query, projection).then(function(histories) {
+      if (histories) {
+        var maxP = 0;
+        for (let i = 0; i < histories.length; i++) {
+          maxP = Math.max(maxP, histories[i].totalProgress);
+        }
+        var upData = {progress: maxP};
+        updateDocSimple(Project, projectId, upData).then(function (response) {
+          fulfill();
+        }, function(reason) {
+          console.error(reason);
+          reject(reason);
+        });
+      } else {
+        fulfill();
+      }
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
+}
+
 
 function getProjects (userId, isAdmin, projectStatus) {
   //Gets a bunch of projects. Can be limited by:
@@ -294,6 +351,56 @@ function getProjects (userId, isAdmin, projectStatus) {
   return getDocs(Project, query);
 }
 
+function projectKickoff (projectId, projectData, userId) {
+  //For when the admin gives the first approval to a project
+  //Updates the project
+  //Then approves the first history
+  console.log("Project kickoff");
+  return new Promise(function(fulfill,reject) {
+    updateProject(projectId, projectData).then(function() {
+      console.log("Project updated");
+      //Find the only history for the project
+      var query = {"project": projectId};
+      var projection = {"_id": true};
+      console.log("Finding query");
+      getOneDoc(History, query, projection).then(function(doc) {
+        console.log("Approving history");
+        console.log("history doc: " + doc.id);
+        console.log("userid: " + userId);
+        approveHistory (doc.id, userId).then(function() {
+          console.log("History approved");
+          fulfill();
+        }, function(reason) {
+          console.error(reason);
+          reject(reason);
+        });
+      }, function(reason) {
+        console.error(reason);
+        reject(reason);
+      });
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
+}
+
+function updateProject (projectId, projectData) {
+  return new Promise(function(fulfill,reject) {
+    updateDocSimple(Project, projectId, projectData).then(function(success) {
+      setDrivePermissions(projectId).then(function(dfi) {
+        fulfill();
+      }, function(reason) {
+        console.error(reason);
+        next(reason);
+      });
+    }, function(reason) {
+      console.error(reason);
+      next(reason);
+    });
+  });
+}
+
 
 function projectPermission (accessUserId, projectId) {
   return new Promise(function(fulfill,reject) {
@@ -307,8 +414,8 @@ function projectPermission (accessUserId, projectId) {
   });
 }
 
-function makeAccessUsers (data, clientId) {
-  var ofAccessUsers = [clientId];
+function makeAccessUsers (data) {
+  var ofAccessUsers = [data.clientUser];
   if (data.responsibleUser) {
     ofAccessUsers.push(data.responsibleUser);
   }
@@ -316,6 +423,133 @@ function makeAccessUsers (data, clientId) {
     ofAccessUsers.push(data.qcUser);
   }
   return ofAccessUsers;
+}
+
+function setDrivePermissions(projectId) {
+  console.log("Setting drive permissions");
+  //Sets up drive permissions based on ofAccessUsers
+  return new Promise (function (fulfill, reject) {
+
+    var query = {"_id": projectId};
+    getOneDoc(Project, query).then(function(projectData) {
+
+      //Create proposed accessUser array based on the qc, resonsible and the client.
+      //This will be compared with the existing ofAccessUser array
+      var newAccessUsers = makeAccessUsers(projectData);
+      //Find out what users to add
+      var toBeAdded = [];
+      console.log("Creating toBeAdded array from");
+      console.log("newAccessUser:");
+      console.log(newAccessUsers);
+      if (!projectData.ofAccessUsers || !projectData.ofAccessUsers.length) {
+        //If there are currently no users in the ofAccessUsers array, all proposed users are to be added
+        console.log("No existing access users");
+        toBeAdded = newAccessUsers;
+      } else {
+        var exAccessUsers = projectData.ofAccessUsers;
+        console.log("exAccessUsers:");
+        console.log(exAccessUsers);
+        var found = false;
+        for (let i = 0; i < newAccessUsers.length; i++) {
+          found = false;
+          //Check against existing access users
+          for (let j = 0; j < exAccessUsers.length; j++) {
+            if (newAccessUsers[i].equals(exAccessUsers[j])) {
+              found = true;
+            }
+          }
+          //Check against other members of the newAccessUsers array
+          if (i) {
+            for (let k = 0; k < i; k++) {
+              if (newAccessUsers[i].equals(newAccessUsers[k])) {
+                found = true;
+              }
+            }
+          }
+          if (!found) {
+            toBeAdded.push(newAccessUsers[i]);
+          } else {
+          }
+        }
+      }
+
+      console.log("Made toBeAdded:");
+      console.log(toBeAdded);
+
+      //Get reference to drive folder
+      console.log("Confirming drive folder");
+      confirmDriveFolder(projectData).then(function(dfi) {
+        console.log("Confirmed drive folder");
+        if (toBeAdded.length) {
+          //Set permissions
+          console.log("Adding drive permissions");
+          console.log("building mpObject");
+          var mpObject = {};
+          for (let i = 0; i < toBeAdded.length; i++) {
+            mpObject[i] = setUserPermission(toBeAdded[i], dfi);
+          }
+          console.log("mpObject built:");
+          console.log(mpObject);
+          multiPromiseLib.mp(mpObject, true).then(function(mpR) {
+          console.log("Drive permissions added");
+            //Update project
+            var upData = {driveId: dfi, ofAccessUsers: newAccessUsers};
+            updateDocSimple(Project, projectId, upData).then(function (response) {
+              console.log("DriveId and ofAccessUsers added to project");
+              fulfill(dfi);
+            });
+          }, function (reason) {
+            console.error(reason);
+            reject(reason);
+          });
+        } else {
+          var upData = {driveId: dfi};
+          updateDocSimple(Project, projectId, upData).then(function (response) {
+            console.log("DriveId added to project");
+            fulfill(dfi);
+          });
+        }
+      }, function (reason) {
+        console.error(reason);
+        reject(reason);
+      });
+    }, function (reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
+}
+
+function confirmDriveFolder (projectData) {
+  return new Promise (function (fulfill, reject) {
+    if (!projectData.driveId) {
+      console.log("Creating project Folder")
+      myDriveHelper.createProjectFolder(projectData._id, projectData.title, projectData.description).then(function(dfi) {
+        console.log("Drive project folder created with id: " + dfi);
+        fulfill(dfi);
+      });
+    } else {
+      fulfill(projectData.driveId);
+    }
+  });
+}
+
+function setUserPermission (userId, driveFolderId) {
+  return new Promise (function (fulfill, reject) {
+    getUserStuff(userId).then(function(userData) {
+      var gmail = userData.gmail;
+      myDriveHelper.addPermission(driveFolderId, gmail).then(function (res) {
+        fulfill();
+      }, function(reason) {
+        var err = new Error ("[mongoHelper.setUserPermission]: Unable to add permission for user " + userId + " to driveFolder " + driveFolderId);
+        console.error(err);
+        fulfill();
+      });
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
 }
 
 function createProject (projectData, userId) {
@@ -326,28 +560,12 @@ function createProject (projectData, userId) {
         projectData.conversation = convoResponse.docId;
         projectData.clientUser = userId;
         projectData.client = userData.companyId;
-        projectData.ofAccessUsers =  makeAccessUsers(projectData, userId);
         createDocSimple(Project, projectData).then(function (projectResponse) {
           var projectId = projectResponse.docId;
-          projectData.id = projectId;
-          var historyData = {text: "Project created by client", project: projectId};
-          console.log("Let's try multiPromise");
-          multiPromiseLib.mp({
-            "responsePFI": myDriveHelper.createProjectFolder(projectId, projectData.title, projectData.description),
-            "historyResponse": createHistory(historyData, projectData, "Admin")
-          }).then(function(mpR) {
-            var projectFolderId = mpR.responsePFI;
-            console.log("Drive project folder created with id: " + projectFolderId);
-            updateDoc(Project, projectId, {driveId: projectFolderId}).then(function (response) {
-              console.log("DriveId added to project");
-              fulfill({docId: projectId, driveFolderId: projectFolderId});
-            }, function (reason) {
-              console.error(reason);
-              reject(reason);
-            });
-          }, function (reason) {
-            console.error(reason);
-            reject(reason);
+          console.log("Setting drive permissions");
+          setDrivePermissions(projectId).then(function (dfi) {
+            console.log("Set drive permissions");
+            fulfill({docId: projectId, driveFolderId: dfi});
           });
         }, function (reason) {
           console.error(reason);
@@ -398,7 +616,7 @@ function getTidyCompanies(query) {
 function userQuery(id) {
   return new Promise(function(fulfill, reject) {
     getUserStuff(id).then(function(doc) {
-      var userData = {"isEng": !doc.isClient, "isAdmin": (doc.gmail == masterMail), "companyId": doc.company};
+      var userData = {"isEng": !doc.isClient, "isAdmin": (doc.gmail == adminMail), "companyId": doc.company};
       fulfill(userData);
     }, function(reason) {
       console.error(reason);
@@ -453,22 +671,6 @@ function getUserStuff (id) {
   });
 }
 
-function findMasterId() {
-  return new Promise (function (fulfill, reject) {
-    getOneDoc(User, {"gmail": masterMail}, {"_id": true}).then(function (doc) {
-      if (doc) {
-        fulfill(doc.id);
-      } else {
-        console.error("Master not found");
-        reject()
-      }
-    }, function(reason) {
-      console.error(reason);
-      reject(reason);
-    });
-  });
-}
-
 function authenticate (gmail, pass) {
   return User.authenticate(gmail, pass);
 }
@@ -507,52 +709,18 @@ function historyPermission (accessUserId, historyId) {
   });
 }
 
-function createHistory(data, projectData, actionUserType) {
-  console.log("Creating History with");
-  console.log("data:");
-  console.log(data);
-  console.log("projectData:");
-  console.log(projectData);
-  console.log("actionUserType:");
-  console.log(actionUserType);
-  return new Promise(function(fulfill, reject) {
-    findMasterId().then(function(adminId) {
-      var actionType = "None";
-      if (actionUserType) {
-        actionType = "Internal";
-        var actionUserId = null;
-        switch(actionUserType) {
-          case "Admin":
-            actionUserId = adminId;
-            break;
-          case "Resp":
-            actionUserId = projectData.responsibleUser;
-            break;
-          case "QC":
-            actionUserId = projectData.qcUser;
-            break;
-          case "Client":
-            actionUserId = projectData.clientUser;
-            actionType = "Client";
-            break;
-          default:
-            var err = new Error ("Invalid actionUserType");
-            console.error(err);
-            reject(err);
-            return;
-        }
-        data.actionUser = actionUserId;
-        data.actionType = actionType;
-      }
-      createDocSimple(History, data, true).then(function(response) {
-        fulfill(response);
-      }, function (reason) {
-        console.error(reason);
+function approveHistory (historyId, userId) {
+  console.log("Approving history " + historyId);
+  return new Promise(function(fulfill,reject) {
+    console.log("Getting true doc");
+    getTrueDoc(History, historyId).then(function(doc) {
+      console.log("Running doc.approve");
+      doc.approve(userId).then(function() {
+        console.log("Doc approved");
+        fulfill();
+      }, function(reason) {
         reject(reason);
       });
-    }, function (reason) {
-      console.error(reason);
-      reject(reason);
     });
   });
 }
@@ -562,6 +730,9 @@ function createHistory(data, projectData, actionUserType) {
 function docPermission (Model, modelId, accessUserId, isAdmin) {
   //Used for getting permission for individual objects
   if (isAdmin) {
+    console.log("Is admin parameter for docPermission is deprecated");
+  }
+  if (accessUserId == adminId) {
     return new Promise (function (fulfill, reject) {
       fulfill(true);
     });
@@ -585,6 +756,25 @@ function docPermission (Model, modelId, accessUserId, isAdmin) {
 
 function doesDocExist(Model, id) {
   return getOneDoc(Model, {"_id": id}, null, true);
+}
+
+function getTrueDoc(Model, id, projection) {
+  Model = processModel(Model);
+  if (!projection) {
+    projection = {};
+  }
+  var query = {"_id": id};
+  return new Promise (function (fulfill, reject) {
+    if (!mongoose.Types.ObjectId.isValid(query._id)) {
+      var error = new Error ("Invalid id: " + query._id + " (" + Model.modelName + ")");
+      reject(error);
+    }
+    Model.findOne(query, projection, function (err, doc) {
+      if (err) return reject(err);
+      if (!doc) return reject(new Error ("Doc not found"));
+      fulfill(doc);
+    });
+  });
 }
 
 function getOneDoc(Model, query, projection, isDdeReq) {
@@ -674,6 +864,17 @@ function getDocs(Model, query, projection) {
 }
 
 function updateDoc (Model, id, data) {
+  //Routing for updateDoc requests
+  Model = processModel(Model);
+  if (Model.modelName == "Project") {
+    return updateProject(Model, id, data);
+  } else {
+    return updateDocSimple(Model, id, data);
+  }
+}
+
+
+function updateDocSimple (Model, id, data) {
   Model = processModel(Model);
   return new Promise (function (fulfill, reject) {
     let query = {"_id": id};
@@ -696,7 +897,18 @@ function createDoc (Model, data, extra) {
   Model = processModel(Model);
   switch(Model.modelName) {
     case "User":
-      return createDocSimple(Model, data);
+      if (data.gmail == adminMail) { //If creating a user with adminrmail, be sure to update admimail
+        return new Promise (function (fulfill, reject) {
+          createDocSimple(Model, data).then(function(docData) {
+            adminId = docData.docId;
+            fulfill(docData);
+          }, function(reason) {
+            reject(reason);
+          });
+        });
+      } else {
+        return createDocSimple(Model, data);
+      }
     case "Company":
       return createDocSimple(Model, data);
     case "Project":
@@ -704,7 +916,8 @@ function createDoc (Model, data, extra) {
     case "Conversation":
       return createDocSimple(Model, data);
     case "History":
-      return createHistory(data, extra.projectData, extra.actionUserType);
+      return createDocSimple(Model, data);
+      //return createHistory(data, extra.projectData, extra.actionUserType);
     default:
       console.error("Model not found: " + Model.modelName);
   }
@@ -761,6 +974,20 @@ function getDocData(Model, id, projection, reqFields, isDdeReq) {
     }, function(reason) {
       console.error(reason);
       reject(reason);
+    });
+  });
+}
+
+function deleteDoc (Model, id) {
+  return new Promise (function (fulfill, reject) {
+    Model = processModel(Model);
+    Model.findByIdAndRemove(id, function (err, doc) {
+      if (err) {
+        console.log(err);
+        reject(err);
+      } else {
+        fulfill();
+      }
     });
   });
 }
@@ -836,8 +1063,8 @@ function reset () {
       createDoc(User, {
         firstName: "Robbie",
         lastName: "Muir",
-        email: "sirrobbiemuir@gmail.com",
-        gmail: "sirrobbiemuir@gmail.com",
+        email: "robbiemuir7@gmail.com",
+        gmail: "robbiemuir7@gmail.com",
         password: "pass",
         userType: "Engineer"
       }).then(function (uRes) {
@@ -878,9 +1105,7 @@ function reset () {
     dropAll().then(function () {
       makeCompanies().then(function () {
         makeUsers().then(function () {
-          makeProjects().then(function () {
-            fulfill();
-          });
+          fulfill();
         });
       });
     });
@@ -888,7 +1113,7 @@ function reset () {
 }
 
 module.exports.makeSession = makeSession;
-module.exports.setUpMongo = setUpMongo;
+module.exports.initAdmin = initAdmin;
 
 module.exports.docPermission = docPermission;
 module.exports.getOneDoc = getOneDoc;
@@ -897,10 +1122,14 @@ module.exports.updateDoc = updateDoc;
 module.exports.createDoc = createDoc;
 module.exports.getDocData = getDocData;
 module.exports.doesDocExist = doesDocExist;
+module.exports.deleteDoc = deleteDoc;
 
 module.exports.addPost = addPost;
+module.exports.approveHistory = approveHistory;
 
 module.exports.getProjects = getProjects;
+module.exports.projectKickoff = projectKickoff;
+module.exports.resolveProjectHistories = resolveProjectHistories;
 
 module.exports.authenticate = authenticate;
 module.exports.getEngineers = getEngineers;
@@ -910,3 +1139,5 @@ module.exports.userQuery = userQuery;
 module.exports.getClientCompanies = getClientCompanies;
 
 module.exports.reset = reset;
+
+module.exports.getAdminId = getAdminId;

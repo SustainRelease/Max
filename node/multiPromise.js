@@ -20,10 +20,14 @@ function test() {
 }
 
 
-function multiPromise(promiseObject) {
+function multiPromise(promiseObject, loud) {
+  if (loud) console.log("Running a multi-promise");
   return new Promise (function (fulfill, reject) {
     var keys = Object.keys(promiseObject);
+    if (loud) console.log("Keys:");
+    if (loud) console.log(keys);
     var nTasks = keys.length;
+    if (loud) console.log("nTasks: " + nTasks);
     var tasksComplete = 0;
     var results = {};
     for (let i = 0; i < nTasks; i++) {
@@ -35,8 +39,10 @@ function multiPromise(promiseObject) {
       });
     }
     function taskComplete(result, index) {
+      if (loud) console.log("Task " + index + " complete");
       results[keys[index]] = result;
       tasksComplete++;
+      if (loud) console.log(tasksComplete + " tasks complete");
       if (tasksComplete == nTasks) {
         fulfill(results);
       }

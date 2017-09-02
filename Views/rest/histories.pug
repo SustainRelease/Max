@@ -1,0 +1,49 @@
+if areHistories  
+  table.dataTable.fullWidth
+    tr
+      th Request Date
+      th Description
+      if isEngineer
+        th Spent Hours
+        th Total Progress
+        th Status
+      else
+        th Status
+      th.ghost
+    each history, index in histories
+      tr
+        td #{history.tidyDate}
+        td #{history.text}
+        if isEngineer
+          td #{history.spentHours}
+          td #{history.totalProgress}%
+          if history.notifiable
+            if isUserActioner
+              td
+                button(onclick="action('approve');") Approve
+                button(onclick="action('modify');") Modify
+                button(onclick="action('reject');") Reject
+            else
+              td #{history.statusText}
+          else
+            td #{history.statusText}
+        else
+          if history.notifiable
+            if isUserActioner
+              td
+                button(onclick="action('approve');") Approve
+                button(onclick="action('modify');") Modify
+                button(onclick="action('reject');") Reject
+            else
+              td #{history.statusText}
+          else
+            td #{history.statusText}
+        td.ghost
+          if index
+            button.cancel(onclick="deleteHistory('" + history.id + "');") X
+if !openAction
+  if isEngineer
+    button#nhButton.weeVertMargin(onclick="showNewHistory();") New history event
+    div#newHistory.hidden
+      h3.weeVertMargin.tCenter New History Event
+      include ../partials/_form.pug

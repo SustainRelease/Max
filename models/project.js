@@ -25,7 +25,7 @@ var ProjectSchema = new mongoose.Schema({
   },
   responsibleUser: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true
+    required: false
   },
   qcUser: {
     type: mongoose.Schema.Types.ObjectId,
@@ -114,6 +114,21 @@ ProjectSchema.pre('save', function(next) {
     next();
   });
 });
+
+ProjectSchema.statics.getStatus = function getStatus (projectId) {
+  var Project = this;
+  return new Promise (function (fulfill, reject) {
+    var query = {"_id": projectId};
+    var projection = {"status": true, "subStatus": true};
+    Project.findOne(query, projection, function (err, doc) {
+      if (err) {
+        reject(err);
+      } else {
+        fulfill({"status": doc.status, "subStatus": doc.subStatus});
+      }
+    });
+  });
+}
 
 var Project = mongoose.model('Project', ProjectSchema);
 module.exports = Project;

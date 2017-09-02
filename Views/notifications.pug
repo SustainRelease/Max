@@ -1,0 +1,21 @@
+extends layout
+
+block content
+  div#notifications
+    div.table.tCenter
+      h1 Notifications
+      if areHistories
+        table.dataTable#nTable(cellspacing="0")
+          tr.sorted
+            each heading, index in ["Project", "Description", "Date", "Status"]
+              th(onclick="w3.sortHTML('#nTable','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
+            each history in histories
+              tr.item
+                td
+                  a(href = subR + "/project?id=" + history.project) #{history.projectTitle}
+                td #{history.text}
+                td #{history.tidyDate}
+                td #{history.statusText}
+      else
+        i No notifications
+  script(src="https://www.w3schools.com/lib/w3.js")

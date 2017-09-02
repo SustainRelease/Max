@@ -48,9 +48,15 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
     //so do not alter them
 
     //Step 2: Add special values
-    if (configTag && tempKuset[configTag + "Text"]) {
-      tempKuset.text = tempKuset[configTag + "Text"];
+    if (configTag) {
+      if (tempKuset[configTag + "Text"]) {
+        tempKuset.text = tempKuset[configTag + "Text"];
+      }
+      if (tempKuset[configTag + "Req"]) {
+        tempKuset.required = true;
+      }
     }
+
     tempKuset.isInput = isInput(kui);
     if (isDup) {
       tempKuset.id = tempKuset.id + "Dup";
