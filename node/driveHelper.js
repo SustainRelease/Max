@@ -15,7 +15,6 @@ var Promise = require('promise');
 
 var auth;
 var masterFolderId = "0B_vUIo8iD_BvVHRweTRsX2Nmcnc";
-var projectFolderId;
 var currentFolderId;
 var fields = "id, name, mimeType, parents, modifiedTime";
 var tidyFunction = function (file) {return file;};
@@ -39,7 +38,6 @@ function createProjectFolder(projectId, name, description) {
         console.error(err);
         reject(err);
       } else {
-        projectFolderId = file.id;
         fulfill(file.id);
       }
     });
@@ -85,12 +83,6 @@ function addPermission (folderId, gmail) {
   });
 }
 
-
-
-function getProjectFolderId() {
-  return projectFolderId;
-}
-
 function init(secretPath, fieldsIn, tidyFunctionIn) {
   return new Promise (function (fulfill, reject) {
     if(fieldsIn) {fields = fieldsIn;}
@@ -113,15 +105,10 @@ function test() {
   });
 }
 
-function getProjectFiles(folderId) {
+function getProjectFiles(folderId, projectFolderId) {
   //Returns an array of the files in a given folder and the folder itself (with the folder being the first item)
   //The files within the folder and the folder itself are modified by the tidy function
   //The folder is asigned an isProject variable to designate whether or not it is the project folder
-  if (!projectFolderId) {
-    console.error("Project folder not set up");
-    return;
-  }
-  if (!folderId) folderId = projectFolderId;
   return new Promise (function (fulfill, reject) {
     getFolderConts(folderId).then(function(files) {
       getFileById(folderId).then(function (folder) {
@@ -321,14 +308,8 @@ function checkAuth() {
   }
 }
 
-function setProjectFolder(PFId) {
-  projectFolderId = PFId;
-}
-
 module.exports.createProjectFolder = createProjectFolder;
 module.exports.getProjectFiles = getProjectFiles;
-module.exports.getProjectFolderId = getProjectFolderId;
 module.exports.init = init;
 module.exports.addPermission = addPermission;
 module.exports.listPermissions = listPermissions;
-module.exports.setProjectFolder = setProjectFolder;

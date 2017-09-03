@@ -13,9 +13,9 @@ function loadProjectSummary() {
 
 //--------------FOLDER STUFF-----------------
 
-function loadFolderContent(folderId) {
-  if (folderId) {
-    var url = "projectList?fid=" + folderId;
+function loadFolderContent(fileCode) {
+  if (fileCode) {
+    var url = "projectList?fCode=" + fileCode;
   } else {
     var url = "projectList";
   }

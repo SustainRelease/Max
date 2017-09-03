@@ -8,6 +8,7 @@ module.exports = function () {
   var bodyParser = require('body-parser');
 
   var mongoHelper = require('./node/mongoHelper');
+  var makeSessionHelper = require('./node/sessionHelper');
 
   var main = require('./Routes/main');
   var project = require('./Routes/project');
@@ -26,6 +27,7 @@ module.exports = function () {
 
   // make user ID available in templates
   app.use(function (req, res, next) {
+    res.locals.sHelper = makeSessionHelper(req.session);
     res.locals.currentUser = req.session.userId;
     res.locals.subRoute = subRoute;
     res.locals.subR = subRoute;

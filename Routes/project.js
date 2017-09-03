@@ -10,37 +10,15 @@ module.exports = function () {
   var priorities = require("../data/priorities.js");
   var kusetManagerP = require('../node/kusetManager')(kusetData.project);
   var kusetManagerH = require('../node/kusetManager')(kusetData.history);
-  var driveFolderId;
-  var projectConvoId;
-  var projectId;
-  var legalIds = [];
-
-
-  function resetLegalIds (files) {    //List of allowable files to access in drive explorer widget
-    legalIds = [driveFolderId]; //Allow project folder
-    if (files) {
-      if (files[0].id != driveFolderId) {     //If we aren't at the project folder
-        legalIds.push(files[0].parents[0]);  //Add next folder up
-      }
-      for (var i = 0; i < files.length; i++) {
-        legalIds.push(files[i].id)  //Allow all files in file array
-      }
-    }
-  }
-
-  function checkFileId(id) {
-    return (legalIds.indexOf(id) > -1);
-  }
-
 
   router.get('/projects', mid.checkLoggedIn, mid.getUserStatus, mid.getProjects, function(req, res, next) {
     res.render('projects');
   });
 
   router.get('/project', mid.checkLoggedIn, mid.getUserStatus, mid.getProjectId, mid.accessProject, function(req, res, next) {
-    projectId = res.locals.projectId;
+    var projectId = res.locals.projectId;
     res.locals.mongoHelper.getDocData(Project, projectId).then(function(projectData) {
-      //myDriveHelper.listPermissions(projectData.driveId);
+      req.session.projectFolderId = projectData.driveId;
       var pendApprove = (projectData.subStatus == 'Pending approval')
       if (pendApprove) {
         projectData.locked = true;
@@ -73,12 +51,10 @@ module.exports = function () {
         }
       } else {
         //------------------------------VIEW PROJECT-------------------------
-        projectConvoId = projectData.conversation;  //Set up the project convoId for later
-        myDriveHelper.setProjectFolder(projectData.driveId);
+        req.session.projectConvoId = projectData.conversation;  //Set up the project convoId for later
         if (projectData.locked && res.locals.isAdmin) {
           res.redirect(res.locals.subRoute + "/project?edit=true&&id=" + projectId); //If the project is locked, send admin to fix it
         } else {
-          resetLegalIds();
           res.render('project', {projectData: projectData});
         }
       }
@@ -86,15 +62,13 @@ module.exports = function () {
       console.error(reason);
       next(reason);
     });
-/*  myDriveHelper.addPermission(projectFolderId, "sirrobbiemuir@gmail.com").then(function (response) {
-    resetLegalIds(); */
   });
 
   router.post('/project', mid.checkLoggedIn, mid.getProjectId, mid.accessProject, mid.getProjectStatus, function(req, res, next) {
     //When making changes to project, many things should run through history events and propogate to project changes
     //The first edit by the admin to approve the project should run through this process too in order to ensure that
     //the history state gets updated to reflect the approval. This is normally done through button press.
-    projectId = res.locals.projectId;
+    var projectId = res.locals.projectId;
     let projectData = kusetManagerP.tidyVals(req.body);
     var pendApprove = (res.locals.projectSubStatus == 'Pending approval');
     if (pendApprove) {
@@ -131,8 +105,9 @@ module.exports = function () {
     let projectData = kusetManagerP.tidyVals(req.body);
     var extra = {userId: req.session.userId, driveHelper: myDriveHelper};
     res.locals.mongoHelper.createDoc(Project, projectData, extra).then(function (projectResponse) {
-      driveFolderId = projectResponse.driveFolderId;
-      projectId = projectResponse.docId;
+      req.session.projectFolderId = projectResponse.driveId;
+      var projectId = projectResponse.docId;
+      res.locals.projectId = projectId;
       var hData = {
         text: "Project created by client",
         project: projectId,
@@ -169,29 +144,20 @@ module.exports = function () {
 
   router.get('/REST/projectId', function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');
-    res.send({projectId: projectId});
+    res.send({projectId: req.session.projectId});
   });
 
-  router.get('/REST/projectList', function(req, res, next) {
-    if (req.query.fid) {
-      if (checkFileId(req.query.fid))
-        myDriveHelper.getProjectFiles(req.query.fid).then(function (files) {
-          resetLegalIds(files);
-          res.render('rest/projectList', {files: files, badId: false});
-        }, function(reason) {
-          console.error(reason);
-        });
-      else {
-        res.render('rest/projectList', {files: null, badId: true});
-      }
-    } else {
-      myDriveHelper.getProjectFiles().then(function (files) {
-        resetLegalIds(files);
-        res.render('rest/projectList', {files: files, badId: false});
-      }, function(reason) {
-        console.error(reason);
-      });
-    }
+  router.get('/REST/projectList', mid.resolveFileCode, function(req, res, next) {
+    console.log("Get projectList");
+    console.log("Getting project files for folderId: " + res.locals.folderId + " and projectFolderId: " + res.locals.projectFolderId);
+    myDriveHelper.getProjectFiles(res.locals.folderId, res.locals.projectFolderId).then(function (files) {
+      console.log("Processing files");
+      res.locals.sHelper.processDriveFiles(files);
+      console.log("Processing complete");
+      res.render('rest/projectList', {files: files});
+    }, function(reason) {
+      console.error(reason);
+    });
   });
 
   router.get('/REST/projectSummary', mid.getProjectId, function (req, res, next) {
@@ -225,12 +191,13 @@ module.exports = function () {
   });
 
   router.post('/REST/historyAction', mid.getHistoryId, mid.getHistoryProject, function (req, res, next) {
+    console.log("Running post history action");
     var actionType = req.body.aType;
     var historyId = res.locals.historyId;
     switch(actionType) {
       case "approve":
         res.locals.mongoHelper.approveHistory(historyId, req.session.userId).then(function(result) {
-          updateProjectAnd201();
+          updateProjectAnd201(res);
         }, function(reason) {
           console.error(reason);
           next(reason);
@@ -340,7 +307,7 @@ module.exports = function () {
       //Put together the data for the createDoc request
       var historyData = {
         text: hData.text,
-        project: projectId,
+        project: res.locals.projectId,
         spentHours: hData.spentHours,
         totalProgress: hData.totalProgress,
         actionType: actionType,
@@ -361,7 +328,7 @@ module.exports = function () {
 //----------------------CONVERSATION-------------------------------
 
   router.get('/REST/conversation', function (req, res, next) {
-    res.locals.mongoHelper.getDocData("Conversation", projectConvoId).then(function (conversation) {
+    res.locals.mongoHelper.getDocData("Conversation", req.session.projectConvoId).then(function (conversation) {
       var posts = conversation.ofPosts;
       var noPosts = (posts.length == 0);
       res.render('rest/conversation', {posts: posts, noPosts: noPosts});
@@ -372,7 +339,7 @@ module.exports = function () {
 
   router.post('/REST/conversation', function (req, res, next) {
     var postText = req.body.postText;
-    res.locals.mongoHelper.addPost(projectConvoId, postText, req.session.userId).then(function(doc) {
+    res.locals.mongoHelper.addPost(req.session.projectConvoId, postText, req.session.userId).then(function(doc) {
       if (doc) {
         res.send('null');
         res.status(201).end();

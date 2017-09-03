@@ -122,6 +122,53 @@ function getHistoryProject(req, res, next) {
   });
 }
 
+function getNotifications(req, res, next) {
+  return History.getNotifications(req.session.userId).then(function (histories) {
+    if (!histories || histories.length == 0) {
+      res.locals.areHistories = false;
+    } else {
+      res.locals.areHistories = true;
+      res.locals.histories = histories;
+    }
+    next();
+  }, function(reason) {
+    console.error(reason);
+    next(reason);
+  });
+}
+
+function getProjectHistories(req, res, next) {
+  History.getProjectHistories(res.locals.projectId).then(function (histories) {
+    if (!histories || histories.length == 0) {
+      res.locals.areHistories = false;
+    } else {
+      res.locals.areHistories = true;
+      res.locals.histories = histories;
+      res.locals.actionHistoryId = null;
+      for (let i = 0; i < histories.length; i++) {
+        if (histories[i].notifiable) {
+          res.locals.openAction = true;
+          res.locals.isUserActioner = req.session.userId == histories[i].actionUser;
+          res.locals.actionHistoryId = histories[i]["_id"];
+        }
+      }
+    }
+    next();
+  }, function(reason) {
+    console.error(reason);
+    next(reason);
+  });
+}
+
+
+//------------------DRIVE STUFF-------------------
+function resolveFileCode (req, res, next) {
+  res.locals.folderId = res.locals.sHelper.uncode(req.query.fCode);
+  res.locals.projectFolderId = req.session.projectFolderId;
+  next();
+}
+
+
 //--------------------Project stuff----------------
 
 function getProjectId(req, res, next) {
@@ -131,13 +178,15 @@ function getProjectId(req, res, next) {
     next(err);
   } else {
     res.locals.projectId = req.query.id;
+    req.session.projectId = req.query.id;
     next();
   }
 }
 
 function accessProject(req, res, next) {
-  var projectId = res.locals.projectId;
+  var projectId = res.locals.projectId
   res.locals.mongoHelper.docPermission(Project, projectId, req.session.userId).then(function(allowAccess) {
+    console.log("AllowAccess: " + allowAccess);
     if(!allowAccess) {
       console.error("Access to project " + projectId + " denied to user " + req.session.userId);
       next(new Error ("Access to project denied"));
@@ -189,49 +238,12 @@ function getProjects (req, res, next) {
   });
 }
 
-
-function getNotifications(req, res, next) {
-  return History.getNotifications(req.session.userId).then(function (histories) {
-    if (!histories || histories.length == 0) {
-      res.locals.areHistories = false;
-    } else {
-      res.locals.areHistories = true;
-      res.locals.histories = histories;
-    }
-    next();
-  }, function(reason) {
-    console.error(reason);
-    next(reason);
-  });
-}
-
-function getProjectHistories(req, res, next) {
-  History.getProjectHistories(res.locals.projectId).then(function (histories) {
-    if (!histories || histories.length == 0) {
-      res.locals.areHistories = false;
-    } else {
-      res.locals.areHistories = true;
-      res.locals.histories = histories;
-      res.locals.actionHistoryId = null;
-      for (let i = 0; i < histories.length; i++) {
-        if (histories[i].notifiable) {
-          res.locals.openAction = true;
-          res.locals.isUserActioner = req.session.userId == histories[i].actionUser;
-          res.locals.actionHistoryId = histories[i]["_id"];
-        }
-      }
-    }
-    next();
-  }, function(reason) {
-    console.error(reason);
-    next(reason);
-  });
-}
-
 module.exports.checkLoggedIn = checkLoggedIn;
 module.exports.checkEngineer = checkEngineer;
 module.exports.checkClient = checkClient;
 module.exports.checkAdmin = checkAdmin;
+
+module.exports.resolveFileCode = resolveFileCode;
 
 module.exports.getUserStatus = getUserStatus;
 module.exports.getUserProjectRole = getUserProjectRole;

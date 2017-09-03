@@ -29,27 +29,16 @@ function getAdminId() {
 }
 
 function initAdmin () {
-  findAdminId().then(function(aid) {
-    console.log("Admin Id found: " + aid);
-    adminId = aid;
+  getOneDoc(User, {"gmail": adminMail}, {"_id": true}, true).then(function (response) {
+    if (response.found) {
+      console.log("AdminId found");
+      adminId = response.doc._id;
+    } else {
+      console.log("AdminId not found");
+    }
   }, function(reason) {
-    console.log("Admin Id not found");
-  });
-}
-
-function findAdminId() {
-  return new Promise (function (fulfill, reject) {
-    getOneDoc(User, {"gmail": adminMail}, {"_id": true}).then(function (doc) {
-      if (doc) {
-        fulfill(doc.id);
-      } else {
-        console.log("Admin id not found");
-        reject()
-      }
-    }, function(reason) {
-      console.error(reason);
-      reject(reason);
-    });
+    console.error(reason);
+    reject(reason);
   });
 }
 
@@ -76,7 +65,12 @@ function endOfKeyIs(key, end) {
   return (key.substr(key.length - len).toUpperCase() == end.toUpperCase());
 }
 
-function processData (mongoDoc, type, loud) {
+function processData (mongoDoc, type, loud, bypass) {
+  if (bypass) {
+    return new Promise (function (fulfill, reject) {
+      fulfill(mongoDoc);
+    });
+  }
   return new Promise (function (fulfill, reject) {
     if (!Object.keys(mongoDoc).length) {
       fulfill(null);
@@ -256,7 +250,10 @@ function makeSession () {
     saveUninitialized: false,
     store: new MongoStore({
       mongooseConnection: db
-    })
+    }),
+    cookie: {
+      maxAge: 60000
+    }
   });
 }
 
@@ -403,10 +400,10 @@ function updateProject (projectId, projectData) {
 
 
 function projectPermission (accessUserId, projectId) {
-  return new Promise(function(fulfill,reject) {
+  return new Promise(function(fulfill, reject) {
     var query = {"_id": projectId, "ofAccessUsers": accessUserId}; //Try finding a doc that has the projectId and contains the accessUser
-    getOneDoc(Project, query, null, true).then(function(isFound) { //The fourth argument here is just to say that we are just wondering if it is there
-      fulfill(isFound);
+    getOneDoc(Project, query, null, true, true).then(function(response) { //The fourth argument here is just to say that we are just wondering if it is there
+      fulfill(response.found);
     }, function(reason) {
       console.error(reason);
       reject(reason);
@@ -565,7 +562,7 @@ function createProject (projectData, userId) {
           console.log("Setting drive permissions");
           setDrivePermissions(projectId).then(function (dfi) {
             console.log("Set drive permissions");
-            fulfill({docId: projectId, driveFolderId: dfi});
+            fulfill({docId: projectId, driveId: dfi});
           });
         }, function (reason) {
           console.error(reason);
@@ -727,11 +724,8 @@ function approveHistory (historyId, userId) {
 
 //-----------------------GENERAL DOCS----------------------
 
-function docPermission (Model, modelId, accessUserId, isAdmin) {
+function docPermission (Model, modelId, accessUserId) {
   //Used for getting permission for individual objects
-  if (isAdmin) {
-    console.log("Is admin parameter for docPermission is deprecated");
-  }
   if (accessUserId == adminId) {
     return new Promise (function (fulfill, reject) {
       fulfill(true);
@@ -741,21 +735,34 @@ function docPermission (Model, modelId, accessUserId, isAdmin) {
     switch(Model.modelName) {
       case "User":
         return userPermission(accessUserId, modelId);
+        break;
       case "Company":
         return companyPermission(accessUserId, modelId);
+        break;
       case "Project":
+        console.log("Forwarding request to projectPermission");
         return projectPermission(accessUserId, modelId);
+        break;
       case "Conversation":
         return conversationPermission(accessUserId, modelId);
+        break;
       case "History":
         return historyPermission(accessUserId, modelId);
+        break;
     }
   }
 }
 
 
 function doesDocExist(Model, id) {
-  return getOneDoc(Model, {"_id": id}, null, true);
+  return new Promise (function (fulfill, reject) {
+    getOneDoc(Model, {"_id": id}, null, true, true).then(function(response) {
+      fulfill(response.found);
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
 }
 
 function getTrueDoc(Model, id, projection) {
@@ -777,38 +784,65 @@ function getTrueDoc(Model, id, projection) {
   });
 }
 
-function getOneDoc(Model, query, projection, isDdeReq) {
+function getOneDoc(Model, query, projection, isSafe, noProcess) {
+  //A function to search for one document of a given modelName
+  //Bonus options
+  //  isSafe: Returns an object with {found: t/f, doc: doc}
+  //          if the doc isn't found, then there is no error
+  //  noProcess:  Prevents the processing of the results
+  //              This can be good to save cpu if you are just wondering if the doc exists or not
+  var loud = false;
   Model = processModel(Model);
   return new Promise (function (fulfill, reject) {
+    if (loud) console.log("Running getOneDoc for model " + Model.modelName + " with query:");
+    if (loud) console.log(query);
     if ('_id' in query) {
       if (!mongoose.Types.ObjectId.isValid(query._id)) {
         var error = new Error ("Invalid id: " + query._id + " (" + Model.modelName + ")");
         reject(error);
-      }
-    }
-    Model.findOne(query, projection, function (err, doc) {
-      if (err) return reject(err);
-      if (isDdeReq) {
-        if (doc) {
-          fulfill(true);
-        } else {
-          fulfill(false)
-        }
         return;
       }
-      if (!doc) {
-        findThatDoc(query._id, Model.modelName).then(function (isFound) {
-          if (isFound) {
-            err = new Error (query._id + " is not a " + Model.modelName);
-          } else {
-            err = new Error (query._id + " does not exist");
-          }
-          return reject(err);
-        });
+    }
+    if (loud) console.log("Finding one");
+    Model.findOne(query, projection, function (err, doc) {
+      if (err) {
+        reject(err);
       } else {
-        processData(doc, "load").then(function(data) {
-          fulfill(data);
-        });
+        if (!doc) {
+          if (loud) console.log("Not found");
+          if (isSafe) {
+            //In safe mode we stay calm and report that the doc wasn't found
+            fulfill({found: false});
+          } else {
+            //Otherwise we freak out and take despeate measures (findThadDoc) to find it.
+            findThatDoc(query._id, Model.modelName).then(function (isFound) {
+              if (isFound) {
+                err = new Error (query._id + " is not a " + Model.modelName);
+              } else {
+                err = new Error (query._id + " does not exist");
+              }
+              reject(err);
+            }, function(reason) {
+              reject(reason);
+            });
+          }
+        } else {
+          if (loud) console.log("Found");
+          var bypass = false;
+          if (noProcess) {
+            bypass = true;
+          }
+          processData(doc, "load", false, bypass).then(function(data) {
+            if (isSafe) {
+              fulfill({found: true, doc: data});
+            } else {
+              fulfill(data);
+            }
+          }, function(reason) {
+            console.error(reason);
+            reject(reason);
+          });
+        }
       }
     });
   });
@@ -957,7 +991,7 @@ function createDocSimple (Model, data, loud) {
   });
 }
 
-function getDocData(Model, id, projection, reqFields, isDdeReq) {
+function getDocData(Model, id, projection, reqFields, isSafe) {
   Model = processModel(Model);
   return new Promise (function (fulfill, reject) {
     if (!projection) {
@@ -969,8 +1003,8 @@ function getDocData(Model, id, projection, reqFields, isDdeReq) {
         query[reqFields[i]] = {$exists: true};
       }
     }
-    getOneDoc(Model, query, projection, isDdeReq).then(function(doc) {
-      fulfill(doc);
+    getOneDoc(Model, query, projection, isSafe).then(function(response) {
+      fulfill(response);
     }, function(reason) {
       console.error(reason);
       reject(reason);

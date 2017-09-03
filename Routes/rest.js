@@ -9,15 +9,11 @@ module.exports = function () {
   router.get('/REST/profilePic', function (req, res, next) {
     var profileId = req.query.id || req.session.userId;
     var defaultPicPath = path.join(__dirname, '..', 'Public', 'images', 'Profile.PNG');
-    res.locals.mongoHelper.getDocData(User, profileId, {"_id": true}, ["img"], true).then(function (doesExist) {
-      if (doesExist) {
-        res.locals.mongoHelper.getDocData(User, profileId, {"img": true}, ["img"]).then(function (userDoc) {
-          res.contentType(userDoc.img.contentType);
-          res.send(userDoc.img.data);
-        }, function(reason) {
-          console.error(reason);
-          next(reason);
-        });
+    res.locals.mongoHelper.getDocData(User, profileId, {"img": true}, ["img"], true).then(function (response) {
+      if (response.found) {
+        var doc = response.doc;
+        res.contentType(doc.img.contentType);
+        res.send(doc.img.data);
       } else {
         res.sendFile(defaultPicPath);
       }
