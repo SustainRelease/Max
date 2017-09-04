@@ -1,4 +1,5 @@
 $(document).ready(function () {
+  $("#company").parent().parent().addClass("hidden");
   var userTypeHandler = function (val, freePass) {
     var companyInput = $("#company");
     companyInput.prop('selectedIndex',0)

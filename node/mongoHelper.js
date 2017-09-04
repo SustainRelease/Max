@@ -28,6 +28,10 @@ function getAdminId() {
   return adminId;
 }
 
+function isAdmin(id) {
+  return adminId.equals(id);
+}
+
 function initAdmin () {
   getOneDoc(User, {"gmail": adminMail}, {"_id": true}, true).then(function (response) {
     if (response.found) {
@@ -613,7 +617,7 @@ function getTidyCompanies(query) {
 function userQuery(id) {
   return new Promise(function(fulfill, reject) {
     getUserStuff(id).then(function(doc) {
-      var userData = {"isEng": !doc.isClient, "isAdmin": (doc.gmail == adminMail), "companyId": doc.company};
+      var userData = {"isEng": !doc.isClient, "isAdmin": isAdmin(id), "companyId": doc.company};
       fulfill(userData);
     }, function(reason) {
       console.error(reason);
@@ -640,12 +644,12 @@ function userPermission (accessUserId, objectUserId) {
         fulfill(true); //Engineers can see all clients
         return;
       } else {
-        getUserStuff(modelId).then(function(oDoc) {
+        getUserStuff(objectUserId).then(function(oDoc) {
           if (!oDoc.isClient) {
             fulfill(true); //Everyone can see engineers
             return;
           } else {
-            fulfill(aDoc.company == oDoc.company);  //People from the same company can see each other
+            fulfill(aDoc.company.equals(oDoc.company));  //People from the same company can see each other
           }
         });
       }
@@ -726,7 +730,7 @@ function approveHistory (historyId, userId) {
 
 function docPermission (Model, modelId, accessUserId) {
   //Used for getting permission for individual objects
-  if (accessUserId == adminId) {
+  if (isAdmin(accessUserId)) {
     return new Promise (function (fulfill, reject) {
       fulfill(true);
     });
@@ -1175,3 +1179,4 @@ module.exports.getClientCompanies = getClientCompanies;
 module.exports.reset = reset;
 
 module.exports.getAdminId = getAdminId;
+module.exports.isAdmin = isAdmin;

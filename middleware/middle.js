@@ -48,7 +48,7 @@ function checkClient(req, res, next) {
 }
 
 function checkAdmin(req, res, next) {
-  return checkUserData(req, res, next, "isAdmin", true);
+  return res.locals.mongoHelper.isAdmin(req.session.userId);
 }
 
 function getUserStatus(req, res, next) {

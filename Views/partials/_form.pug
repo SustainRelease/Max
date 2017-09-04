@@ -2,13 +2,17 @@ div.tCenter.form
   form(id=formData.name method="post" action= subR + formData.submitPath)
     table
       each kuset in formData.vals
+        - var kText = kuset.text
+        - if (kuset.date) {
+        -   kText = kText + " (dd/mm/yyyy)";    
+        - }
+        - if (kuset.required) {
+        -   var kText = kText + "*";  
+        - }
         if (kuset.select)
           tr
             td
-              if (kuset.required)
-                label(for=kuset.id) #{kuset.text}*
-              else
-                label(for=kuset.id) #{kuset.text}
+              label(for=kuset.id) #{kText}
             td
               select(id=kuset.id, name=kuset.id)
                 option(value="null") ---
@@ -40,18 +44,12 @@ div.tCenter.form
                   td=kuset.value
                 else
                   td
-                    if (kuset.date)
-                      if (kuset.required)
-                        label(for=kuset.id) #{kuset.text} (dd/mm/yyyy)*
-                      else
-                        label(for=kuset.id) #{kuset.text} (dd/mm/yyyy)
-                    else
-                      if (kuset.required)
-                        label(for=kuset.id) #{kuset.text}*
-                      else
-                        label(for=kuset.id) #{kuset.text}
+                    label #{kText}
                   td
-                    input(id=kuset.id, name=kuset.id type="text" value=kuset.value)
+                    if (kuset.password)
+                      input(id=kuset.id, name=kuset.id type="password" value=kuset.value)
+                    else
+                      input(id=kuset.id, name=kuset.id type="text" value=kuset.value)
               td.issueText
     input.submit(type="submit" value= formData.submitText)
     if formData.cancelPath

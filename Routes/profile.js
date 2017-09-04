@@ -19,11 +19,6 @@ module.exports = function () {
     });
   })
 
-  router.get('/REST/userKusets', function(req, res, next) {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(kusetManager.getFormVals());
-  });
-
   router.post('/register', function(req, res, next) {
     let userData = kusetManager.saveVals(req.body);
     res.locals.mongoHelper.createDoc(User, userData).then(function (response) {
@@ -73,30 +68,34 @@ module.exports = function () {
   router.get('/user', mid.checkLoggedIn, mid.getUserStatus, function(req, res, next) {
     var userId = req.session.userId;
     if (req.query.id) {
-      var qUserId = req.query.id;
+      var qUserId = req.query.id
+      console.log("qUserId found: " + qUserId);
     } else {
-      console.error("qUserId not found, setting to userId");
+      console.log("qUserId not found, setting to userId");
       var qUserId = userId;
     }
     if (qUserId == userId) {
-      res.redirect(res.locals.subRoute + '/profile'); //If they are looking at themselves, redirect to profile
+       //If they are looking at themselves, redirect to profile
+      res.redirect(res.locals.subRoute + '/profile');
+    } else {
+      //Otherwise, go to profile as visitor
+      res.locals.mongoHelper.docPermission (User, userId, qUserId).then(function(allowAccess) {
+        if (!allowAccess) {
+          console.error("Access to user " + qUserId + " denied to user " + req.session.userId);
+          next(new Error ("Access to user denied"));
+        } else {
+          res.locals.mongoHelper.getDocData(User, qUserId).then(function (profile) {
+            res.render('user', {user: profile});
+          }, function(reason) {
+            console.error(reason);
+            next(reason);
+          });
+        }
+      }, function(reason) {
+        console.error(reason);
+        next(reason);
+      });
     }
-    res.locals.mongoHelper.docPermission (User, userId, qUserId, res.locals.isAdmin).then(function(allowAccess) {
-      if (!allowAccess) {
-        console.error("Access to user " + qUserId + " denied to user " + req.session.userId);
-        next(new Error ("Access to user denied"));
-      } else {
-        res.locals.mongoHelper.getDocData(User, qUserId).then(function (profile) {
-          res.render('user', {user: profile});
-        }, function(reason) {
-          console.error(reason);
-          next(reason);
-        });
-      }
-    }, function(reason) {
-      console.error(reason);
-      next(reason);
-    });
   });
 
   //SUBMITTING PROFILE EDIT
@@ -126,8 +125,15 @@ module.exports = function () {
 
   router.get('/login', function(req, res, next) {
     var formVals = kusetManager.getFormVals("login");
+    var formData = {name: "loginForm", scriptName: "login", submitText: "Submit", submitPath: "/login", vals: formVals};
+    var pugData = {formData: formData, loggedOut: true, badAuth: req.query.badAuth};
+    res.render('login', pugData);
+
+    /*
+    var formVals = kusetManager.getFormVals("login");
     var pugData = {loggedOut: true, badAuth: req.query.badAuth, logVals: formVals};
     res.render('login', pugData);
+    */
   });
 
   router.post('/login', function(req, res, next) {
@@ -160,7 +166,12 @@ module.exports = function () {
         }
       });
     }
-  })
+  });
+
+  router.get('/REST/userKusets', function(req, res, next) {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(kusetManager.getFormVals());
+  });
 
   return router;
 }

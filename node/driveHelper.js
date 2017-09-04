@@ -15,7 +15,6 @@ var Promise = require('promise');
 
 var auth;
 var masterFolderId = "0B_vUIo8iD_BvVHRweTRsX2Nmcnc";
-var currentFolderId;
 var fields = "id, name, mimeType, parents, modifiedTime";
 var tidyFunction = function (file) {return file;};
 

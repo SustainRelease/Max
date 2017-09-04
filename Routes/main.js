@@ -15,6 +15,7 @@ module.exports = function () {
 
   router.get('/todo', function (req, res, next) {
     var messages = [
+      "sessionize kusetManager",
       "Drive sharing only to be added on project approval",
       "Reviews",
       "Calendar sharing",
