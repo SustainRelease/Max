@@ -21,17 +21,33 @@ module.exports = function () {
 
   var app = express();
 
+  var sesBlackList = [
+    "/staticMax"
+  ]
+
   // use sessions for tracking logins
   app.use(mongoHelper.makeSession());
   mongoHelper.initAdmin();
 
   // make user ID available in templates
   app.use(function (req, res, next) {
-    res.locals.sHelper = makeSessionHelper(req.session);
-    res.locals.currentUser = req.session.userId;
+    var sesPass = true;
+    var url = req.url;
+    for (let i = 0; i < sesBlackList.length; i++) {
+      var blString = sesBlackList[i];
+      var len = blString.length;
+      if (req.url.substring(0,len) == blString) {
+        sesPass = false;
+      }
+    }
+    if (sesPass) {
+      console.log("Session pass for url: " + url);
+      res.locals.sHelper = makeSessionHelper(req.session);
+      res.locals.sHelper.display();
+      res.locals.mongoHelper = mongoHelper;
+    }
     res.locals.subRoute = subRoute;
     res.locals.subR = subRoute;
-    res.locals.mongoHelper = mongoHelper;
     next();
   });
 

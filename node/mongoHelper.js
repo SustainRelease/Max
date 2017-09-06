@@ -256,7 +256,7 @@ function makeSession () {
       mongooseConnection: db
     }),
     cookie: {
-      maxAge: 60000
+      maxAge: 100000
     }
   });
 }

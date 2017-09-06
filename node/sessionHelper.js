@@ -1,11 +1,28 @@
+var count = 0;
+
 module.exports = function makeSesssionHelper(session) {
-  if (!session.init) {
-    console.log("New session");
+  if (!session.index) {
+    session.index = count;
+    count++;
+    console.log("Creating session: " + session.index);
     session.codeTranslator = [];
-    session.init = true;
+  } else {
+    console.log("Loading existing session: " + session.index);
   }
 
   var my = {};
+
+  my.display = function display() {
+    var sesCondense = {};
+    var keys = Object.keys(session);
+    for (let i = 0; i < keys.length; i++) {
+      let key = keys[i];
+      if (key != "cookie") {
+        sesCondense[key] = session[key];
+      }
+    }
+    console.log(sesCondense);
+  }
 
   my.uncode = function uncode(fCode) {
     if (fCode) {
