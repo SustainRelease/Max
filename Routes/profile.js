@@ -157,7 +157,11 @@ module.exports = function () {
 
   router.get('/logout', function (req, res, next) {
     if (req.session) {
+      req.session.userId = null;
+      return res.redirect(res.locals.subRoute + '/login');
+      
       // delete session object
+      /*
       req.session.destroy(function(err) {
         if(err) {
           return next(err);
@@ -165,6 +169,7 @@ module.exports = function () {
           return res.redirect(res.locals.subRoute + '/login');
         }
       });
+      */
     }
   });
 
