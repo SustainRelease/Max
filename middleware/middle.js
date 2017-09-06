@@ -10,7 +10,7 @@ function checkLoggedIn(req, res, next) {
       if (doesExist) {
         next();
       } else {
-        console.log("Access denied: User not found");
+        console.log("Access denied to " + req.url + ": User not found");
         console.log(req.session.userId);
         res.redirect(res.locals.subRoute + '/login');
       }
@@ -20,8 +20,8 @@ function checkLoggedIn(req, res, next) {
       next(reason);
     });
   } else {
-    console.log("Access denied: No session found");
-    console.log(req.session);
+    console.log("Access denied to " + req.url + ": No session found");
+    console.log(req.sHelper.display());
     res.redirect(res.locals.subRoute + '/login');
     return;
   }
