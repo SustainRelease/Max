@@ -5,7 +5,15 @@ buildFormValidator = function () {
   var freePass = {};
   var my = {};
 
-  my.setup = function (kusetPath, specialHandlers) {
+  function setFreePass(freePassIds) {
+    for (let i = 0; i < freePassIds.length; i++) {
+      freePass[freePassIds[i]] = true;
+    }
+    console.log("Free pass set: ");
+    console.log(freePass);
+  }
+
+  my.setup = function (kusetPath, specialHandlers, freePassIds) {
     $.getJSON(kusetPath, function(data) {
       formVals = data;
       if (!formVals) {
@@ -43,10 +51,18 @@ buildFormValidator = function () {
         }
         //Add existing values of select elements
         if (formVals[i].select) {
+          console.log("Found select field: " + formVals[i].id);
           if (formVals[i].value) {
+            console.log("Value found: " + formVals[i].value);
             var selector = ("#" + formVals[i].id + ' option[value="' + formVals[i].value + '"]');
             $(selector).prop('selected', true);
+          } else {
+            console.log("No value found");
           }
+        }
+
+        if (freePassIds) {  //Add free passes
+          setFreePass(freePassIds);
         }
       }
     });
@@ -108,7 +124,7 @@ buildFormValidator = function () {
       }
     }
     if (formVals[i].date) {
-      if (!isValidDate(val)) {
+      if (val && !isValidDate(val)) {
         setIssue(i, {type: "dateError", text: "Invalid date"});
         return 1;
       }

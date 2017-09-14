@@ -10,9 +10,12 @@ module.exports = function () {
   var mongoHelper = require('./node/mongoHelper');
   var makeSessionHelper = require('./node/sessionHelper');
 
+  var mid = require('./middleware/middle.js');
+
   var main = require('./Routes/main');
   var project = require('./Routes/project');
   var profile = require('./Routes/profile');
+  var company = require('./Routes/company');
   var rest = require("./Routes/rest");
 
   var sites = require('../bin/siteManager.json');
@@ -41,9 +44,8 @@ module.exports = function () {
       }
     }
     if (sesPass) {
-      console.log("Session pass for url: " + url);
       res.locals.sHelper = makeSessionHelper(req.session);
-      res.locals.sHelper.display();
+      //res.locals.sHelper.display();
       res.locals.mongoHelper = mongoHelper;
     }
     res.locals.subRoute = subRoute;
@@ -62,9 +64,13 @@ module.exports = function () {
 
   app.use('/staticMax', express.static(__dirname + '/Public'));
 
+
+  app.use(mid.getUserStatus);
+
   app.use(subRoute, main());
   app.use(subRoute, project());
   app.use(subRoute, profile());
+  app.use(subRoute, company());
   app.use(subRoute, rest());
 
   app.use(favicon(path.join(__dirname, 'Public', 'images', 'Favicon.png')));

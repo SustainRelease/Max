@@ -19,13 +19,20 @@ var fields = "id, name, mimeType, parents, modifiedTime";
 var tidyFunction = function (file) {return file;};
 
 
-function createProjectFolder(projectId, name, description) {
+function makeFolderName (client, name) {
+  return client + " - " + name;
+}
+
+function createProjectFolder(projectId, client, name, description) {
   return new Promise (function(fulfill, reject) {
     var fileMetadata = {
-      'name' : projectId,
-      'description': name + " - " + description,
+      'name' : makeFolderName(client, name),
+      'description': description,
       'mimeType' : 'application/vnd.google-apps.folder',
       'parents': [masterFolderId],
+      'properties': {
+        'mongoId': projectId
+      }
     };
     service.files.create({
        resource: fileMetadata,
@@ -92,17 +99,6 @@ function init(secretPath, fieldsIn, tidyFunctionIn) {
   });
 }
 
-function test() {
-  getAuth("../data/client_secret.json").then(function (res) {
-    getProjectFolder("502331").then(function(folder) {
-      getFolderConts(folder.id).then(function(files) {
-        for (var i = 0; i < files.length; i++) {
-          console.log(files[i]);
-        }
-      });
-    });
-  });
-}
 
 function getProjectFiles(folderId, projectFolderId) {
   //Returns an array of the files in a given folder and the folder itself (with the folder being the first item)
@@ -127,13 +123,6 @@ function getProjectFiles(folderId, projectFolderId) {
 function getFolderConts(folderId) {
   if (!checkAuth()) return false;
   else return getFiles({parent: folderId}, "id, name, mimeType, parents, modifiedTime");
-}
-
-function getProjectFolder(folderName) {
-  if (!checkAuth()) return false;
-  return getFile({name: "Max", isFolder: true}, "id").then(function(maxFolder) {
-    return getFile({name: folderName, isFolder: true, parent: maxFolder.id}, "id");
-  });
 }
 
 function getFiles (queryObj, fields) {

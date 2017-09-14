@@ -1,7 +1,11 @@
 nav#mainNav
 	link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
-	if (!loggedOut)
+	if (loggedIn)
 		div.flex_box.right.vCenter
+			if isAdmin
+				div.flex_item
+					a.clean(href= subRoute + "/companyManager" title="Company Manager")
+						i.fa.fa-cogs.fa-2x(aria-hidden="true")
 			div.flex_item
 				a.clean(href= subRoute + "/users" title="Users")
 					i.fa.fa-address-book.fa-2x(aria-hidden="true")

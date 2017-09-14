@@ -89,6 +89,29 @@ var UserSchema = new mongoose.Schema({
     data: Buffer,
     contentType: String,
     required: false
+  },
+  engLev: {
+    type: String,
+    required: true,
+    default: "None" //None Basic Medium Advanced Native
+  },
+  spaLev: {
+    type: String,
+    required: true,
+    default: "None"
+  },
+  porLev: {
+    type: String,
+    required: true,
+    default: "None"
+  },
+  jobDesc: {
+    type: String,
+    required: false
+  },
+  stuDesc: {
+    type: String,
+    required: false
   }
 });
 

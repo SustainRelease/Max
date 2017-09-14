@@ -364,6 +364,13 @@ div.main {
   cursor: pointer;
 }
 
+.form textArea {
+  resize: none;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /****************NAV****************/
 nav#mainNav {
   width: 100%;

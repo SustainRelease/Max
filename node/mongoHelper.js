@@ -525,7 +525,7 @@ function confirmDriveFolder (projectData) {
   return new Promise (function (fulfill, reject) {
     if (!projectData.driveId) {
       console.log("Creating project Folder")
-      myDriveHelper.createProjectFolder(projectData._id, projectData.title, projectData.description).then(function(dfi) {
+      myDriveHelper.createProjectFolder(projectData._id, projectData.clientName, projectData.title, projectData.description).then(function(dfi) {
         console.log("Drive project folder created with id: " + dfi);
         fulfill(dfi);
       });

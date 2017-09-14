@@ -11,11 +11,11 @@ module.exports = function () {
   var kusetManagerP = require('../node/kusetManager')(kusetData.project);
   var kusetManagerH = require('../node/kusetManager')(kusetData.history);
 
-  router.get('/projects', mid.checkLoggedIn, mid.getUserStatus, mid.getProjects, function(req, res, next) {
+  router.get('/projects', mid.checkLoggedIn, mid.getProjects, function(req, res, next) {
     res.render('projects');
   });
 
-  router.get('/project', mid.checkLoggedIn, mid.getUserStatus, mid.getProjectId, mid.accessProject, function(req, res, next) {
+  router.get('/project', mid.checkLoggedIn, mid.getProjectId, mid.accessProject, function(req, res, next) {
     var projectId = res.locals.projectId;
     res.locals.mongoHelper.getDocData(Project, projectId).then(function(projectData) {
       req.session.projectFolderId = projectData.driveId;
@@ -137,17 +137,17 @@ module.exports = function () {
     });
   });
 
-  router.get('/REST/projectKusets', function(req, res, next) {
+  router.get('/REST/projectKusets', mid.checkLoggedIn, function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');
     res.send(kusetManagerP.getFormVals());
   });
 
-  router.get('/REST/projectId', function(req, res, next) {
+  router.get('/REST/projectId', mid.checkLoggedIn, function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');
     res.send({projectId: req.session.projectId});
   });
 
-  router.get('/REST/projectList', mid.resolveFileCode, function(req, res, next) {
+  router.get('/REST/projectList', mid.checkLoggedIn, mid.resolveFileCode, function(req, res, next) {
     console.log("Get projectList");
     console.log("Getting project files for folderId: " + res.locals.folderId + " and projectFolderId: " + res.locals.projectFolderId);
     myDriveHelper.getProjectFiles(res.locals.folderId, res.locals.projectFolderId).then(function (files) {
@@ -160,7 +160,7 @@ module.exports = function () {
     });
   });
 
-  router.get('/REST/projectSummary', mid.getProjectId, function (req, res, next) {
+  router.get('/REST/projectSummary', mid.checkLoggedIn, mid.getProjectId, function (req, res, next) {
     var projectId = res.locals.projectId;
     res.locals.mongoHelper.getDocData(Project, projectId).then(function(projectData) {
       res.render('rest/projectSummary', {projectData: projectData});
@@ -172,17 +172,17 @@ module.exports = function () {
 
   //----------------------HISTORY-------------------------------
 
-  router.get('/REST/historyKusets', function(req, res, next) {
+  router.get('/REST/historyKusets', mid.checkLoggedIn, function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');
     res.send(kusetManagerH.getFormVals());
   });
 
-  router.get('/REST/actionHistoryId', mid.getProjectId, mid.getProjectHistories, function(req, res, next) {
+  router.get('/REST/actionHistoryId', mid.checkLoggedIn, mid.getProjectId, mid.getProjectHistories, function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');
     res.send({actionHistoryId: res.locals.actionHistoryId});
   });
 
-  router.get('/REST/histories', mid.getUserStatus, mid.getProjectId, mid.getProjectStatus, mid.getProjectHistories, function (req, res, next) {
+  router.get('/REST/histories', mid.checkLoggedIn, mid.getProjectId, mid.getProjectStatus, mid.getProjectHistories, function (req, res, next) {
     var formVals = kusetManagerH.getFormVals("register");
     var submitPath = null;
     var cancelPath = null;
@@ -190,7 +190,7 @@ module.exports = function () {
     res.render('rest/histories', {formData: formData});
   });
 
-  router.post('/REST/historyAction', mid.getHistoryId, mid.getHistoryProject, function (req, res, next) {
+  router.post('/REST/historyAction', mid.checkLoggedIn, mid.getHistoryId, mid.getHistoryProject, function (req, res, next) {
     console.log("Running post history action");
     var actionType = req.body.aType;
     var historyId = res.locals.historyId;
@@ -222,7 +222,7 @@ module.exports = function () {
     }
   });
 
-  router.post('/REST/history', mid.getProjectId, mid.getUserProjectRole, function (req, res, next) {
+  router.post('/REST/history', mid.checkLoggedIn, mid.getProjectId, mid.getUserProjectRole, function (req, res, next) {
     var hData = req.body;
     var userProjectRole = res.locals.userProjectRole;
     var projectRoles = res.locals.projectRoles;
@@ -327,7 +327,7 @@ module.exports = function () {
 
 //----------------------CONVERSATION-------------------------------
 
-  router.get('/REST/conversation', function (req, res, next) {
+  router.get('/REST/conversation', mid.checkLoggedIn, function (req, res, next) {
     res.locals.mongoHelper.getDocData("Conversation", req.session.projectConvoId).then(function (conversation) {
       var posts = conversation.ofPosts;
       var noPosts = (posts.length == 0);
@@ -337,7 +337,7 @@ module.exports = function () {
     });
   });
 
-  router.post('/REST/conversation', function (req, res, next) {
+  router.post('/REST/conversation', mid.checkLoggedIn, function (req, res, next) {
     var postText = req.body.postText;
     res.locals.mongoHelper.addPost(req.session.projectConvoId, postText, req.session.userId).then(function(doc) {
       if (doc) {

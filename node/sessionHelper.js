@@ -4,10 +4,10 @@ module.exports = function makeSesssionHelper(session) {
   if (!session.index) {
     session.index = count;
     count++;
-    console.log("Creating session: " + session.index);
+    //console.log("Creating session: " + session.index);
     session.codeTranslator = [];
   } else {
-    console.log("Loading existing session: " + session.index);
+    //console.log("Loading existing session: " + session.index);
   }
 
   var my = {};

@@ -53,16 +53,28 @@ block content
             p Age: #{user.age}
           if (user.birthCountry)
             p From: #{user.birthCountry}
-      div.flex_item.two_third
+
+    -var lText = ["English", "Spanish", "Portuguese"];
+    -var lVals = [user.engLev, user.spaLev, user.porLev];
+    -var nLangs = 0;
+    -for (var i = 0; i < 3; i++) {
+    - if (lVals[i] != "None") {
+    - nLangs++
+    - }
+    -}
+    if nLangs
+      div.weeVertMargin
         h2 Languages
-        each lang in ["English", "Spanish", "Portruguese"]
-          div.flex_box.weeVertMargin
-            div.flex_item
-              p=lang
-            div.flex_item.hAlignR.vAlign.slider
-              img(src="/staticMax/images/SlideMid.png")
-    h2 Jobs
-    p He had some jobs
-    h2 Studies
-    p He did some studies
+        ul
+        -for (var i = 0; i < 3; i++) {
+        - if (lVals[i] != "None") {
+          li #{lText[i]}: #{lVals[i]}
+        - }
+        -}
+    if user.jobDesc
+      h2 Jobs
+      p #{user.jobDesc}
+    if user.stuDesc
+      h2 Studies
+      p #{user.stuDesc}
     h2 Reviews

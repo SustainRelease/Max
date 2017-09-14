@@ -1,10 +1,26 @@
 var History = require("../models/history.js");
 var Project = require("../models/project.js");
+var adminCompanyName = require("../data/adminData.json").companyName;
 
+
+
+//------------------Company stufff------------------
+function getCompanies(req, res, next) {
+  res.locals.mongoHelper.getDocs("Company", {}, {}).then(function(docs) {
+    if (docs) {
+      res.locals.companies = docs;
+    } else {
+      res.locals.companies = null;
+    }
+    next();
+  }, function(reason) {
+    next(reason);
+  });
+}
 
 //-------------------User stuff------------------
 
-function checkLoggedIn(req, res, next) {
+function checkLoggedInOLD(req, res, next) {
   if (req.session && req.session.userId) {
     return res.locals.mongoHelper.doesDocExist("User", req.session.userId).then(function (doesExist) {
       if (doesExist) {
@@ -12,6 +28,7 @@ function checkLoggedIn(req, res, next) {
       } else {
         console.log("Access denied to " + req.url + ": User not found");
         console.log(req.session.userId);
+        console.log("Redirecting to login");
         res.redirect(res.locals.subRoute + '/login');
       }
       return;
@@ -21,13 +38,18 @@ function checkLoggedIn(req, res, next) {
     });
   } else {
     console.log("Access denied to " + req.url + ": No session found");
-    console.log(req.sHelper.display());
+    console.log("Redirecting to login");
     res.redirect(res.locals.subRoute + '/login');
     return;
   }
 }
 
+
 function checkUserData (req, res, next, key, value) {
+  if (!res.locals.loggedIn) {
+    console.log("Redirecting to login (checkUserData) from url " + req.url);
+    res.redirect(res.locals.subRoute + '/login');
+  }
   res.locals.mongoHelper.userQuery(req.session.userId).then(function(userData) {
     if(userData[key] == value) {
       next();
@@ -41,6 +63,15 @@ function checkUserData (req, res, next, key, value) {
   });
 }
 
+function checkLoggedIn (req, res, next) {
+  if (res.locals.loggedIn) {
+    next();
+  } else {
+    console.log("Redirecting to login (checkLoggedIn) from url " + req.url);
+    res.redirect(res.locals.subRoute + '/login');
+  }
+}
+
 function checkEngineer(req, res, next) {
   return checkUserData(req, res, next, "isEng", true);
 }
@@ -50,19 +81,24 @@ function checkClient(req, res, next) {
 }
 
 function checkAdmin(req, res, next) {
-  return res.locals.mongoHelper.isAdmin(req.session.userId);
+  return checkUserData(req, res, next, "isAdmin", true);;
 }
 
 function getUserStatus(req, res, next) {
-  res.locals.mongoHelper.userQuery(req.session.userId).then(function(userData) {
-    res.locals.isEngineer = userData.isEng;
-    res.locals.isAdmin = userData.isAdmin;
-    res.locals.companyId = userData.companyId;
+  if (req.session && req.session.userId) {
+    res.locals.loggedIn = true;
+    res.locals.mongoHelper.userQuery(req.session.userId).then(function(userData) {
+      res.locals.isEngineer = userData.isEng;
+      res.locals.isAdmin = userData.isAdmin;
+      res.locals.companyId = userData.companyId;
+      next();
+    }, function (reason) {
+      console.error(reason);
+      next(reason);
+    });
+  } else {
     next();
-  }, function (reason) {
-    console.error(reason);
-    next(reason);
-  });
+  }
 }
 
 function getUserProjectRole(req, res, next) {
@@ -239,6 +275,8 @@ function getProjects (req, res, next) {
     next(reason);
   });
 }
+
+module.exports.getCompanies = getCompanies;
 
 module.exports.checkLoggedIn = checkLoggedIn;
 module.exports.checkEngineer = checkEngineer;

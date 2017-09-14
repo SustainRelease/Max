@@ -47,9 +47,14 @@ div.tCenter.form
                     label #{kText}
                   td
                     if (kuset.password)
-                      input(id=kuset.id, name=kuset.id type="password" value=kuset.value)
+                      input(id=kuset.id name=kuset.id type="password" value=kuset.value)
                     else
-                      input(id=kuset.id, name=kuset.id type="text" value=kuset.value)
+                      if (kuset.textBox)
+                        -var rows = kuset.rows || 2;
+                        -var placeHolder = kuset.placeHolder + " (Max " + kuset.maxLen + " chars)";
+                        textArea.postText.vAlign(id=kuset.id name=kuset.id rows=rows form=formData.name placeHolder=placeHolder) #{kuset.value}
+                      else
+                        input(id=kuset.id, name=kuset.id type="text" value=kuset.value)
               td.issueText
     input.submit(type="submit" value= formData.submitText)
     if formData.cancelPath

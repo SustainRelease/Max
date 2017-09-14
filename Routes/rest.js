@@ -6,7 +6,7 @@ module.exports = function () {
   var path = require('path');
 
   //REST API
-  router.get('/REST/profilePic', function (req, res, next) {
+  router.get('/REST/profilePic', mid.checkLoggedIn, function (req, res, next) {
     var profileId = req.query.id || req.session.userId;
     var defaultPicPath = path.join(__dirname, '..', 'Public', 'images', 'Profile.PNG');
     res.locals.mongoHelper.getDocData(User, profileId, {"img": true}, ["img"], true).then(function (response) {

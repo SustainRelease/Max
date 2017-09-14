@@ -20,7 +20,12 @@ module.exports = function () {
   })
 
   router.post('/register', function(req, res, next) {
-    let userData = kusetManager.saveVals(req.body);
+    console.log("Posting to register with data:");
+    console.log(req.body);
+    console.log("Tidying values");
+    let userData = kusetManager.tidyVals(req.body);
+    console.log("Tidy values:");
+    console.log(userData);
     res.locals.mongoHelper.createDoc(User, userData).then(function (response) {
       req.session.userId = response.docId;
       res.redirect(res.locals.subRoute + '/profile');
@@ -34,7 +39,7 @@ module.exports = function () {
     res.render('notifications');
   });
 
-  router.get('/users', mid.checkLoggedIn, mid.getUserStatus, function(req, res, next) {
+  router.get('/users', mid.checkLoggedIn, function(req, res, next) {
     res.locals.mongoHelper.getDocs(User, {"isClient": false}).then(function(engineers) {
       if (res.locals.isEngineer) {
          var cQuery = {"isClient": true};
@@ -51,6 +56,8 @@ module.exports = function () {
   router.get('/profile', mid.checkLoggedIn, function(req, res, next) {  //The users own profile
     res.locals.mongoHelper.getDocData(User, req.session.userId).then(function (profile) {
       if (req.query.edit) {
+        //console.log("Ex profile data:");
+        //console.log(profile);
         var formVals = kusetManager.getFormVals("profileEdit", profile);
         var formData = {name: "userForm", scriptName: "userEdit", submitText: "Submit", submitPath: "/profile", vals: formVals, cancelPath: "/profile"};
         var pugData = {user: profile, formData: formData};
@@ -65,7 +72,7 @@ module.exports = function () {
   });
 
 
-  router.get('/user', mid.checkLoggedIn, mid.getUserStatus, function(req, res, next) {
+  router.get('/user', mid.checkLoggedIn, function(req, res, next) {
     var userId = req.session.userId;
     if (req.query.id) {
       var qUserId = req.query.id
@@ -99,7 +106,9 @@ module.exports = function () {
   });
 
   //SUBMITTING PROFILE EDIT
-  router.post('/profile', function (req, res, next) {
+  router.post('/profile', mid.checkLoggedIn, function (req, res, next) {
+    //console.log("Posting data: ");
+    //console.log(req.body);
     let userData = kusetManager.tidyVals(req.body);
     res.locals.mongoHelper.updateDoc(User, req.session.userId, userData).then(function () {
       res.redirect(res.locals.subRoute + '/profile');
@@ -124,10 +133,13 @@ module.exports = function () {
   });
 
   router.get('/login', function(req, res, next) {
+    console.log("Router Getting form vals");
     var formVals = kusetManager.getFormVals("login");
+    console.log("Router Got form vals");
     var formData = {name: "loginForm", scriptName: "login", submitText: "Submit", submitPath: "/login", vals: formVals};
     var pugData = {formData: formData, loggedOut: true, badAuth: req.query.badAuth};
     res.render('login', pugData);
+    console.log("Rendered login");
 
     /*
     var formVals = kusetManager.getFormVals("login");
@@ -159,7 +171,7 @@ module.exports = function () {
     if (req.session) {
       req.session.userId = null;
       return res.redirect(res.locals.subRoute + '/login');
-      
+
       // delete session object
       /*
       req.session.destroy(function(err) {

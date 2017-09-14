@@ -4,6 +4,14 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
   var defaultKuset = kusetData.defaultKuset;
   var kusets = kusetData.kusets;
   var configs = kusetData.configs;
+  var localSelectData = null;
+  if (kusetData.localSelectData) {
+    console.log("localSelectData Found");
+    localSelectData = kusetData.localSelectData;
+    console.log(localSelectData);
+  } else {
+    console.log("No localSelectData found");
+  }
   if (!(defaultKuset && kusets && configs)) {
     var err = new Error ("Bad kuset data");
     throw err;
@@ -115,7 +123,7 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
     return true;
   }
 
-  function setupFormVals(configTagIn, selectData) {
+  function setupFormVals(configTagIn, selectDataIn) {
     //selectData is an array of id and text fields for the dropdown.
     if (!configs[configTagIn]) {
       console.error("Config '" + configTag  +"' not found");
@@ -128,8 +136,9 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
     for (let kui = 0; kui < kusets.length; kui++) {
       if (configQueryVal(kui)) {  //If this kuset is to be included in the formVals
         if (selectTag = kusets[kui].selectTag) {  //Check if it is a select element (with dropdown)
+          var selectData = selectDataIn || localSelectData //If no external selectdata is provided, check localSelectData
           if (!selectData) {
-            console.error("No selectData supplied");
+            console.error("No selectData found");
             return;
           }
           if (selectData[selectTag]) {
@@ -179,22 +188,33 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
       if (fvi == null) {
         console.log(fvLookup);
         console.error("Form value id not found: " + id);
+        console.log("formVals:");
+        console.log(formVals);
+        console.log("kusets");
+        console.log(kusets);
       }
-      if (!formVals[fvi].duplicate) {
-        if (formVals[fvi].select) {
-          if (val != "null") {
-            tidyVals[id] = val;
-          }
-        } else {
-          if (formVals[fvi].multi) {
-            tidyVals[id] = formVals[fvi].ans[val];
+
+      if (!(formVals[fvi].date && isString(val) && !val.length)) { //Kill empty date values
+        if (!formVals[fvi].duplicate) {
+          if (formVals[fvi].select) {
+            if (val != "null") {
+              tidyVals[id] = val;
+            }
           } else {
-            tidyVals[id] = val;
+            if (formVals[fvi].multi) {
+              tidyVals[id] = formVals[fvi].ans[val];
+            } else {
+              tidyVals[id] = val;
+            }
           }
         }
       }
     }
     return tidyVals;
+  }
+
+  function isString(x) {
+    return Object.prototype.toString.call(x) === "[object String]";
   }
 
   function updateFormVals (exData) {
@@ -208,19 +228,32 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
 
   var my = {};
 
-  my.getFormVals = function (tag, exData, selectData) {
+  my.getFormVals = function (tagIn, exData, selectData) {
+    var loud = false;
+    if (loud) {
+      if (tagIn) {
+        console.log("Getting form values for tag: " + tagIn);
+      } else {
+        console.log("Getting ex form values");
+      }
+    }
     //Tag is the specifier for the ofrm
     //exData is the existing data to populate the form
     //SelectData is the custom data for drop-down elements
-    if (tag) {
+    if (tagIn) {
       if (selectData) {
-        setupFormVals(tag, selectData);
+        setupFormVals(tagIn, selectData);
       } else {
-        setupFormVals(tag);
+        setupFormVals(tagIn);
       }
     }
     if (exData) {
       updateFormVals(exData);
+    }
+    
+    if (loud) {
+      console.log("Form values are:");
+      console.log(formVals);
     }
     return formVals;
   }

@@ -14,7 +14,8 @@ $(document).ready(function () {
   var specialHandlers = {
     userType: userTypeHandler
   }
-  formValidator.setup("REST/userKusets", specialHandlers);
+  var freePassIds = ["company"];
+  formValidator.setup("REST/userKusets", specialHandlers, freePassIds);
   form = $("#userForm");
   form.submit(function(event) {
     var nIssues = formValidator.checkAll(true);

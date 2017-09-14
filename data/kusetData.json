@@ -25,6 +25,10 @@
       {
         "id": "description",
         "text": "Description",
+        "textBox": true,
+        "rows": 10,
+        "placeHolder": "A description of the project",
+        "maxLen": 300,
         "permanent": true,
         "register": true
       },
@@ -199,12 +203,12 @@
       },
       {
         "id": "userType",
+        "text": "User Type",
         "multi": true,
         "selText": [
           "I am an Engineer",
           "I am a Client"
         ],
-        "text": "User Type",
         "ans": [
           "Engineer",
           "Client"
@@ -255,7 +259,63 @@
         "id": "birthCountry",
         "text": "Country of Birth",
         "required": false
+      },
+      {
+        "id": "engLev",
+        "text": "English",
+        "selectTag": "languageLevel",
+        "required": false
+      },
+      {
+        "id": "spaLev",
+        "text": "Spanish",
+        "selectTag": "languageLevel",
+        "required": false
+      },
+      {
+        "id": "porLev",
+        "text": "Portuguese",
+        "selectTag": "languageLevel",
+        "required": false
+      },
+      {
+        "id": "jobDesc",
+        "text": "Jobs",
+        "required": false,
+        "textBox": true,
+        "rows": 8,
+        "placeHolder": "A brief description of your professional history",
+        "maxLen": 200
+      },
+      {
+        "id": "stuDesc",
+        "text": "Studies",
+        "required": false,
+        "textBox": true,
+        "rows": 8,
+        "placeHolder": "A brief description of your academic history",
+        "maxLen": 200
       }
-    ]
+    ],
+    "localSelectData": {
+      "languageLevel": [
+        {
+          "id": "Basic",
+          "text": "Basic"
+        },
+        {
+          "id": "Medium",
+          "text": "Medium"
+        },
+        {
+          "id": "Advanced",
+          "text": "Advanced"
+        },
+        {
+          "id": "Native",
+          "text": "Native"
+        }
+      ]
+    }
   }
 }
