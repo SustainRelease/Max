@@ -18,6 +18,19 @@ function getCompanies(req, res, next) {
   });
 }
 
+function getClients(req, res, next) {
+  res.locals.mongoHelper.getDocs("Company", {isClient: true}, {}).then(function(docs) {
+    if (docs) {
+      res.locals.clients = docs;
+    } else {
+      res.locals.clients = null;
+    }
+    next();
+  }, function(reason) {
+    next(reason);
+  });
+}
+
 //-------------------User stuff------------------
 
 function checkLoggedInOLD(req, res, next) {
@@ -277,6 +290,7 @@ function getProjects (req, res, next) {
 }
 
 module.exports.getCompanies = getCompanies;
+module.exports.getClients = getClients;
 
 module.exports.checkLoggedIn = checkLoggedIn;
 module.exports.checkEngineer = checkEngineer;

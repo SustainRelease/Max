@@ -1,4 +1,6 @@
 module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
+  var loud = false;
+
   var formVals = [];
   var tidyValsFunc = tidyValsFuncIn;
   var defaultKuset = kusetData.defaultKuset;
@@ -6,11 +8,11 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
   var configs = kusetData.configs;
   var localSelectData = null;
   if (kusetData.localSelectData) {
-    console.log("localSelectData Found");
+    if (loud) console.log("localSelectData Found");
     localSelectData = kusetData.localSelectData;
-    console.log(localSelectData);
+    if (loud) console.log(localSelectData);
   } else {
-    console.log("No localSelectData found");
+    if (loud) console.log("No localSelectData found");
   }
   if (!(defaultKuset && kusets && configs)) {
     var err = new Error ("Bad kuset data");
@@ -250,7 +252,7 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
     if (exData) {
       updateFormVals(exData);
     }
-    
+
     if (loud) {
       console.log("Form values are:");
       console.log(formVals);

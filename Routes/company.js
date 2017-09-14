@@ -3,11 +3,11 @@ module.exports = function () {
   var router = express.Router();
   var mid = require('../middleware/middle.js');
 
-  router.get('/companyManager', mid.checkAdmin, function(req, res, next) {
-    res.render('companyManager');
+  router.get('/administrator', mid.checkAdmin, function(req, res, next) {
+    res.render('administrator');
   });
 
-  router.get('/REST/companyTable', mid.checkAdmin, mid.getCompanies, function (req, res, next) {
+  router.get('/REST/companyTable', mid.checkAdmin, mid.getClients, function (req, res, next) {
     res.render('rest/companyTable');
   });
 

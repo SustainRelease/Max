@@ -28,9 +28,11 @@ module.exports = function () {
     "/staticMax"
   ]
 
+
+  mongoHelper.initAdmin();
+
   // use sessions for tracking logins
   app.use(mongoHelper.makeSession());
-  mongoHelper.initAdmin();
 
   // make user ID available in templates
   app.use(function (req, res, next) {

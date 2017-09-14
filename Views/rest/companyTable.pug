@@ -1,18 +1,18 @@
 
-h1.weeVertMargin.tableTitle.tCenter Companies
-if companies
+h2.weeVertMargin.tableTitle.tCenter Client Companies
+if clients
   table.weeVertMargin.dataTable#companyTable(cellspacing="0")
     tr.sorted
       each heading, index in ["Name",  "Joined Date"]
         th(onclick="w3.sortHTML('#companyTable','.item', 'td:nth-child(" + (index+1) + ")')") #{heading}
-      each company in companies
+      each company in clients
         tr.item
           td #{company.name}
           td #{company.setupDate}
 else
   i No companies exist
 div.tCenter.hAlign.weeVertMargin
-  h2 New company
+  h3 New company
   table.hAlign
     tr
       td
