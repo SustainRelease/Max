@@ -239,7 +239,7 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
         console.log("Getting ex form values");
       }
     }
-    //Tag is the specifier for the ofrm
+    //Tag is the specifier for the form
     //exData is the existing data to populate the form
     //SelectData is the custom data for drop-down elements
     if (tagIn) {

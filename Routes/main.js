@@ -27,5 +27,12 @@ module.exports = function () {
     res.render('message', pugData);
   });
 
+
+  router.get("/reset", function (req, res, next) {
+    res.locals.mongoHelper.reset().then(function () {
+      res.render('message', {title: "Hello", messages: ["DB Reset"]});
+    });
+  });
+
   return router;
 }

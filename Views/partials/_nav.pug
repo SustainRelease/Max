@@ -1,5 +1,6 @@
 nav#mainNav
 	link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+	-var showProfilePic = false;
 	if (loggedIn)
 		div.flex_box.right.vCenter
 			if isAdmin
@@ -16,8 +17,11 @@ nav#mainNav
 				a.clean(href= subRoute + "/notifications" title="Notifications")
 					i.fa.fa-bell.fa-2x(aria-hidden="true")
 			div.flex_item
-				a.clean(href= subRoute + "/profile")
-					img#miniProfilePic(src= subR + "/REST/profilePic" title="Profile")
+				a.clean(href= subRoute + "/profile" title="Profile")
+					if showProfilePic
+						img#miniProfilePic(src= subR + "/REST/profilePic" title="Profile")
+					else
+						i.fa.fa-user.fa-2x(aria-hidden="true")
 			div.flex_item
 				a.clean(href= subRoute + "/logout" title="Log out")
 					i.fa.fa-sign-out.fa-2x

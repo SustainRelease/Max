@@ -1,4 +1,6 @@
 var count = 0;
+var Promise = require('promise');
+var loud = false;
 
 module.exports = function makeSesssionHelper(session) {
   if (!session.index) {
@@ -10,7 +12,56 @@ module.exports = function makeSesssionHelper(session) {
     //console.log("Loading existing session: " + session.index);
   }
 
+
+  function retrieveUserStatus(res) {
+    //Gets the user status from the session
+    if (loud) console.log("session > locals")
+    res.locals.isEngineer = session.isEngineer;
+    res.locals.isAdmin = session.isAdmin;
+    res.locals.companyId = session.companyId;
+  }
+
+
   var my = {};
+
+  my.resetUserStatus = function resetUserStatus(res) {
+    return new Promise (function (fulfill, reject) {
+      if (loud) console.log("Retrieving userData from mongo");
+      res.locals.mongoHelper.userQuery(session.userId).then(function(userData) {
+        if (loud) console.log("mongo > session");
+        session.isEngineer = userData.isEng;
+        session.isAdmin = userData.isAdmin;
+        session.companyId = userData.companyId;
+        session.userStatusSet = true;
+        retrieveUserStatus(res);
+        fulfill();
+      }, function (reason) {
+        console.error(reason);
+        reject(reason);
+      });
+    });
+  }
+
+  my.getUserStatus = function getUserStatus(res) {
+    return new Promise (function (fulfill, reject) {
+      if (!session.userId) {
+        fulfill();
+      } else {
+        res.locals.loggedIn = true;
+        if (session.userStatusSet) {
+          if (loud) console.log("Loading existing userdata");
+          retrieveUserStatus(res);
+          fulfill();
+        } else {
+          my.resetUserStatus(res).then(function(res) {
+            fulfill();
+          }, function(reason) {
+            reject(reason);
+          });
+        }
+      }
+    });
+  }
 
   my.display = function display() {
     var sesCondense = {};

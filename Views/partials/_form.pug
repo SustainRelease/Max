@@ -9,7 +9,7 @@ div.tCenter.form
         - if (kuset.required) {
         -   var kText = kText + "*";  
         - }
-        if (kuset.select)
+        if (kuset.select && kuset.selectData)
           tr
             td
               label(for=kuset.id) #{kText}
@@ -25,9 +25,9 @@ div.tCenter.form
               tr
                 td
                   if (i)
-                    input(type="radio" name=kuset.id value=i)
+                    input(type="radio" name=kuset.id value=i id=kuset.id + i)
                   else
-                    input(type="radio" name=kuset.id value=i checked)
+                    input(type="radio" name=kuset.id value=i id=kuset.id + i checked)
                 td
                   label #{selText}
           else

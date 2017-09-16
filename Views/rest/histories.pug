@@ -22,7 +22,6 @@ if areHistories
               td
                 button(onclick="action('approve');") Approve
                 button(onclick="action('modify');") Modify
-                button(onclick="action('reject');") Reject
             else
               td #{history.statusText}
           else
@@ -32,7 +31,6 @@ if areHistories
             if isUserActioner
               td
                 button(onclick="action('approve');") Approve
-                button(onclick="action('modify');") Modify
                 button(onclick="action('reject');") Reject
             else
               td #{history.statusText}

@@ -15,6 +15,7 @@ var Company = require("../models/company.js");
 var Project = require("../models/project.js");
 var Conversation = require("../models/conversation.js");
 var History = require("../models/history.js");
+var Review = require("../models/review.js");
 
 var priorities = require("../data/priorities.js");
 var multiPromise = require("../node/multiPromise.js");
@@ -279,12 +280,6 @@ function setUpMongo (dbName, reset) {
 
 //------------------CONVERSATIONS----------------
 
-function conversationPermission (accessUserId, convoId) {
-  return new Promise(function(fulfill,reject) {
-    fulfill(true);  //We aren't too fussed about convos right now
-  });
-}
-
 function addPost (convoId, text, userId) {
   return new Promise(function (fulfill, reject) {
     var post = {
@@ -402,19 +397,6 @@ function updateProject (projectId, projectData) {
   });
 }
 
-
-function projectPermission (accessUserId, projectId) {
-  return new Promise(function(fulfill, reject) {
-    var query = {"_id": projectId, "ofAccessUsers": accessUserId}; //Try finding a doc that has the projectId and contains the accessUser
-    getOneDoc(Project, query, null, true, true).then(function(response) { //The fourth argument here is just to say that we are just wondering if it is there
-      fulfill(response.found);
-    }, function(reason) {
-      console.error(reason);
-      reject(reason);
-    });
-  });
-}
-
 function makeAccessUsers (data) {
   var ofAccessUsers = [data.clientUser];
   if (data.responsibleUser) {
@@ -426,6 +408,60 @@ function makeAccessUsers (data) {
   return ofAccessUsers;
 }
 
+function makeToBeAdded (projectData, newAccessUsers) {
+  //Create proposed accessUser array based on the qc, resonsible and the client.
+  //This will be compared with the existing ofAccessUser array
+  //Find out what users to add
+  var toBeAdded = [];
+  var areExUsers;
+  console.log("Creating toBeAdded array from");
+  console.log("newAccessUser:");
+  console.log(newAccessUsers);
+  var areExUsers = (projectData.ofAccessUsers && projectData.ofAccessUsers.length);
+  if (!areExUsers) console.log("No existing access users");
+  if (areExUsers) {
+    var exAccessUsers = projectData.ofAccessUsers;
+    console.log("exAccessUsers:");
+    console.log(exAccessUsers);
+  }
+  var include;
+  for (let i = 0; i < newAccessUsers.length; i++) {
+    console.log("Testing user: " + newAccessUsers[i]);
+    console.log("adminId is: " + adminId);
+    include = true;
+    if (isAdmin(newAccessUsers[i])) {
+      console.log("Is admin. Not being included");
+      include = false;
+    } else {
+      if (areExUsers) {
+        console.log("Checking against exAccessUsers");
+        //Check against existing access users
+        for (let j = 0; j < exAccessUsers.length; j++) {
+          if (newAccessUsers[i].equals(exAccessUsers[j])) {
+            include = false;
+            console.log("Match found. Not being included");
+          }
+        }
+      }
+      //Check against other members of the newAccessUsers array
+      if (i) {
+        console.log("Checking against newAccessUsers");
+        for (let k = 0; k < i; k++) {
+          if (newAccessUsers[i].equals(newAccessUsers[k])) {
+            include = false;
+            console.log("Match found. Not being included");
+          }
+        }
+      }
+    }
+    if (include) {
+      toBeAdded.push(newAccessUsers[i]);
+    }
+  }
+  return toBeAdded;
+}
+
+
 function setDrivePermissions(projectId) {
   console.log("Setting drive permissions");
   //Sets up drive permissions based on ofAccessUsers
@@ -433,47 +469,8 @@ function setDrivePermissions(projectId) {
 
     var query = {"_id": projectId};
     getOneDoc(Project, query).then(function(projectData) {
-
-      //Create proposed accessUser array based on the qc, resonsible and the client.
-      //This will be compared with the existing ofAccessUser array
       var newAccessUsers = makeAccessUsers(projectData);
-      //Find out what users to add
-      var toBeAdded = [];
-      console.log("Creating toBeAdded array from");
-      console.log("newAccessUser:");
-      console.log(newAccessUsers);
-      if (!projectData.ofAccessUsers || !projectData.ofAccessUsers.length) {
-        //If there are currently no users in the ofAccessUsers array, all proposed users are to be added
-        console.log("No existing access users");
-        toBeAdded = newAccessUsers;
-      } else {
-        var exAccessUsers = projectData.ofAccessUsers;
-        console.log("exAccessUsers:");
-        console.log(exAccessUsers);
-        var found = false;
-        for (let i = 0; i < newAccessUsers.length; i++) {
-          found = false;
-          //Check against existing access users
-          for (let j = 0; j < exAccessUsers.length; j++) {
-            if (newAccessUsers[i].equals(exAccessUsers[j])) {
-              found = true;
-            }
-          }
-          //Check against other members of the newAccessUsers array
-          if (i) {
-            for (let k = 0; k < i; k++) {
-              if (newAccessUsers[i].equals(newAccessUsers[k])) {
-                found = true;
-              }
-            }
-          }
-          if (!found) {
-            toBeAdded.push(newAccessUsers[i]);
-          } else {
-          }
-        }
-      }
-
+      var toBeAdded = makeToBeAdded(projectData, newAccessUsers);
       console.log("Made toBeAdded:");
       console.log(toBeAdded);
 
@@ -489,9 +486,7 @@ function setDrivePermissions(projectId) {
           for (let i = 0; i < toBeAdded.length; i++) {
             mpObject[i] = setUserPermission(toBeAdded[i], dfi);
           }
-          console.log("mpObject built:");
-          console.log(mpObject);
-          multiPromiseLib.mp(mpObject, true).then(function(mpR) {
+          multiPromiseLib.mp(mpObject, true, true).then(function(mpR) {
           console.log("Drive permissions added");
             //Update project
             var upData = {driveId: dfi, ofAccessUsers: newAccessUsers};
@@ -542,6 +537,7 @@ function setUserPermission (userId, driveFolderId) {
       myDriveHelper.addPermission(driveFolderId, gmail).then(function (res) {
         fulfill();
       }, function(reason) {
+        console.error(reason);
         var err = new Error ("[mongoHelper.setUserPermission]: Unable to add permission for user " + userId + " to driveFolder " + driveFolderId);
         console.error(err);
         fulfill();
@@ -584,26 +580,23 @@ function createProject (projectData, userId) {
 }
 
 //---------------COMPANIES---------------------
-
-
-function companyPermission (accessUserId, companyId) {
-  return new Promise(function(fulfill,reject) {
-    fulfill(true);  //We aren't too fussed about companies
-  });
-}
-
 function getClientCompanies() {
+  console.log("Getting client companies");
   return getTidyCompanies({"isClient": true});
 }
 
 function getTidyCompanies(query) {
   return new Promise (function (fulfill, reject) {
     getDocs(Company, query, {"_id": true, "name": true}).then(function(companies) {
-      var tidyCompanies = [];
-      for (var i = 0; i < companies.length; i++) {
-        tidyCompanies[i] = {id: companies[i]._id, text: companies[i].name};
+      if (!companies) {
+        fulfill(null);
+      } else {
+        var tidyCompanies = [];
+        for (var i = 0; i < companies.length; i++) {
+          tidyCompanies[i] = {id: companies[i]._id, text: companies[i].name};
+        }
+        fulfill(tidyCompanies);
       }
-      fulfill(tidyCompanies);
     }, function (reason) {
       console.error(reason);
       reject(reason);
@@ -704,20 +697,18 @@ function getTidyUsers(query) {
 }
 
 //-----------------------HISTORY DOCS----------------------
-function historyPermission (accessUserId, historyId) {
-  return new Promise(function(fulfill,reject) {
-    fulfill(true);  //We aren't too fussed about companies
-  });
-}
-
-function approveHistory (historyId, userId) {
+function approveHistory (historyId, userId, isWithMods) {
   console.log("Approving history " + historyId);
   return new Promise(function(fulfill,reject) {
     console.log("Getting true doc");
     getTrueDoc(History, historyId).then(function(doc) {
       console.log("Running doc.approve");
-      doc.approve(userId).then(function() {
-        console.log("Doc approved");
+      doc.approve(userId, (isWithMods)).then(function() {
+        if (isWithMods) {
+          console.log("Doc approved with mods");
+        } else {
+          console.log("Doc approved");
+        }
         fulfill();
       }, function(reason) {
         reject(reason);
@@ -727,37 +718,6 @@ function approveHistory (historyId, userId) {
 }
 
 //-----------------------GENERAL DOCS----------------------
-
-function docPermission (Model, modelId, accessUserId) {
-  //Used for getting permission for individual objects
-  if (isAdmin(accessUserId)) {
-    return new Promise (function (fulfill, reject) {
-      fulfill(true);
-    });
-  } else {
-    Model = processModel(Model);
-    switch(Model.modelName) {
-      case "User":
-        return userPermission(accessUserId, modelId);
-        break;
-      case "Company":
-        return companyPermission(accessUserId, modelId);
-        break;
-      case "Project":
-        console.log("Forwarding request to projectPermission");
-        return projectPermission(accessUserId, modelId);
-        break;
-      case "Conversation":
-        return conversationPermission(accessUserId, modelId);
-        break;
-      case "History":
-        return historyPermission(accessUserId, modelId);
-        break;
-    }
-  }
-}
-
-
 function doesDocExist(Model, id) {
   return new Promise (function (fulfill, reject) {
     getOneDoc(Model, {"_id": id}, null, true, true).then(function(response) {
@@ -892,7 +852,7 @@ function getDocs(Model, query, projection) {
       if (err) return reject(err);
       if (!doc) {
         err = new Error ("Doc not found");
-        return reject(err);
+        reject(err);
       }
       processData(doc, "load").then(function(data) {
         fulfill(data);
@@ -947,17 +907,10 @@ function createDoc (Model, data, extra) {
       } else {
         return createDocSimple(Model, data);
       }
-    case "Company":
-      return createDocSimple(Model, data);
     case "Project":
       return createProject(data, extra.userId);
-    case "Conversation":
-      return createDocSimple(Model, data);
-    case "History":
-      return createDocSimple(Model, data);
-      //return createHistory(data, extra.projectData, extra.actionUserType);
     default:
-      console.error("Model not found: " + Model.modelName);
+      return createDocSimple(Model, data);
   }
 }
 
@@ -1043,6 +996,8 @@ function processModel (Model) {
         return Conversation;
       case "History":
         return History;
+      case "Review":
+        return Review;
       default:
         console.error("Bad model type");
         return null;
@@ -1053,36 +1008,38 @@ function processModel (Model) {
 
 function reset () {
 
-  Company.collection.drop();
-  Conversation.collection.drop();
-  Project.collection.drop();
-
   var icerfishId;
   var astrowebId;
   var robbieId;
   var chrisId;
 
   function dropAll() {
-    return new Promise (function(fulfill, reject) {
-      console.log("Starting the drop");
-      User.collection.drop(function (err, result) {
-        console.log("Dropped users");
-        Company.collection.drop(function (err, result) {
-          console.log("Dropped companies");
-          Project.collection.drop(function (err, result) {
-            console.log("Dropped projects");
-            Conversation.collection.drop(function (err, result) {
-              console.log("Dropped conversations");
-              History.collection.drop(function (err, result) {
-                console.log("Dropped histories");
-                fulfill();
-              });
-            });
-          });
+    var mpObject = {};
+    var models = [User, Company, Project, Conversation, History, Review];
+    for (let i = 0; i < models.length; i++) {
+      mpObject[i] = new Promise (function(fulfill, reject) {
+        models[i].collection.drop(function(err, result) {
+          if (err) {
+            reject(err);
+          } else {
+            console.log("Dropped " + models[i].modelName);
+            fulfill(result);
+          }
         });
+      });
+    }
+    return new Promise(function (fulfill, reject) {
+      multiPromiseLib.mp(mpObject).then(function(res) {
+        console.log("Drop success");
+        fulfill(res);
+      }, function(reason) {
+        console.log("Drop issue");
+        console.error(reason);
+        fulfill(true);
       });
     });
   }
+
   function makeCompanies() {
     return new Promise (function(fulfill, reject) {
       createDoc(Company, {name: "Navalis", isClient: false}).then(function () {
@@ -1139,6 +1096,25 @@ function reset () {
     });
   }
 
+  return new Promise (function(fulfill, reject) {
+    dropAll().then(function(mpR) {
+      console.log("Dropped all:");
+      console.log(mpR);
+      console.log("Creating Navalis");
+      createDoc(Company, {name: "Navalis", isClient: false}).then(function(result) {
+        fulfill();
+      }, function(reason) {
+        console.error(reason);
+        reject(reason);
+      });
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
+
+
+  /*
   return new Promise (function (fulfill, reject) {
     dropAll().then(function () {
       makeCompanies().then(function () {
@@ -1148,12 +1124,12 @@ function reset () {
       });
     });
   });
+  */
 }
 
 module.exports.makeSession = makeSession;
 module.exports.initAdmin = initAdmin;
 
-module.exports.docPermission = docPermission;
 module.exports.getOneDoc = getOneDoc;
 module.exports.getDocs = getDocs;
 module.exports.updateDoc = updateDoc;
@@ -1173,6 +1149,7 @@ module.exports.authenticate = authenticate;
 module.exports.getEngineers = getEngineers;
 module.exports.getClientUsers = getClientUsers;
 module.exports.userQuery = userQuery;
+module.exports.userPermission = userPermission;
 
 module.exports.getClientCompanies = getClientCompanies;
 

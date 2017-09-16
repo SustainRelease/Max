@@ -1,5 +1,4 @@
 module.exports = function () {
-
   var express = require('express');
   var path = require('path');
   var favicon = require('serve-favicon');
@@ -34,6 +33,10 @@ module.exports = function () {
   // use sessions for tracking logins
   app.use(mongoHelper.makeSession());
 
+  function printReq(req) {
+    console.log("--------------" + req.method + ": '" + req.url + "'");
+  }
+
   // make user ID available in templates
   app.use(function (req, res, next) {
     var sesPass = true;
@@ -45,14 +48,21 @@ module.exports = function () {
         sesPass = false;
       }
     }
-    if (sesPass) {
-      res.locals.sHelper = makeSessionHelper(req.session);
-      //res.locals.sHelper.display();
-      res.locals.mongoHelper = mongoHelper;
-    }
     res.locals.subRoute = subRoute;
     res.locals.subR = subRoute;
-    next();
+    if (!sesPass) {
+      next();
+    } else {
+      printReq(req);
+      res.locals.mongoHelper = mongoHelper;
+      res.locals.sHelper = makeSessionHelper(req.session);
+      res.locals.sHelper.getUserStatus(res).then(function () {
+        next();
+      }, function(reason) {
+        console.error(reason);
+        next(reason);
+      });
+    }
   });
 
   // view engine setup
@@ -67,7 +77,7 @@ module.exports = function () {
   app.use('/staticMax', express.static(__dirname + '/Public'));
 
 
-  app.use(mid.getUserStatus);
+
 
   app.use(subRoute, main());
   app.use(subRoute, project());

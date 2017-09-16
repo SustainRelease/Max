@@ -5,17 +5,22 @@ module.exports = function () {
   var Project = require("../models/project.js");
   var History = require("../models/history.js");
   var myDriveHelper = require("../node/myDriveHelper.js");
-  var kusetData = require("../data/kusetData.json")
   var multiPromiseLib = require("../node/multiPromise.js");
+
+  var kusetData = require("../data/kusetData.json")
   var priorities = require("../data/priorities.js");
-  var kusetManagerP = require('../node/kusetManager')(kusetData.project);
-  var kusetManagerH = require('../node/kusetManager')(kusetData.history);
+  var scoreInfo = require("../data/scoreInfo.js");
+
+  var buildKusetManager = require('../node/kusetManager');
+  var kusetManagerP = buildKusetManager(kusetData.project);
+  var kusetManagerH = buildKusetManager(kusetData.history);
+  var kusetManagerR = buildKusetManager(kusetData.review);
 
   router.get('/projects', mid.checkLoggedIn, mid.getProjects, function(req, res, next) {
     res.render('projects');
   });
 
-  router.get('/project', mid.checkLoggedIn, mid.getProjectId, mid.accessProject, function(req, res, next) {
+  router.get('/project', mid.checkLoggedIn, mid.getProjectId, mid.getUserProjectRole, mid.accessProject, function(req, res, next) {
     var projectId = res.locals.projectId;
     res.locals.mongoHelper.getDocData(Project, projectId).then(function(projectData) {
       req.session.projectFolderId = projectData.driveId;
@@ -28,20 +33,35 @@ module.exports = function () {
       }
       if (req.query.edit) {
         //------------------------------EDIT PROJECT-------------------------
-        if ((projectData.locked && !res.locals.isAdmin) || !res.locals.isEngineer) { //If project is locked, only admin is allowed to edit. After approval, all enginers with access are allowed.
+        var access = false;
+        if (res.locals.isAdmin) { // Admin is always allowed access
+          access = true;
+        }
+        if (!projectData.locked) {  // If the project isn't locked, the project responsible also has access;
+          if (res.locals.userProjectRole == "Resp") {
+            access = true;
+          }
+        }
+        if (!access) {
           console.error("Editing project " + projectId + " denied to user " + req.session.userId);
           next(new Error ("Access to project denied"));
         } else {
           res.locals.mongoHelper.getEngineers().then(function(engineers) {
             var selectData = {engineers: engineers};
-            var formVals = kusetManagerP.getFormVals("projectEdit", projectData, selectData);
             var projectPath = "/project?id=" + projectData.id;
             if (projectData.locked) {
               var cancelPath = "/projects";
             } else {
               var cancelPath = projectPath;
             }
-            var formData = {name: "projectForm", scriptName: "projectEdit", submitText: "Approve", submitPath: projectPath, vals: formVals, cancelPath: cancelPath};
+            var formData = {
+              name: "projectForm",
+              scriptName: "projectEdit",
+              submitText: "Approve",
+              submitPath: projectPath,
+              vals: kusetManagerP.getFormVals("projectEdit", projectData, selectData),
+              cancelPath: cancelPath
+            };
             var pugData = {projectData: projectData, formData: formData};
             res.render('projectEdit', pugData);
           }, function(reason) {
@@ -64,7 +84,7 @@ module.exports = function () {
     });
   });
 
-  router.post('/project', mid.checkLoggedIn, mid.getProjectId, mid.accessProject, mid.getProjectStatus, function(req, res, next) {
+  router.post('/project', mid.checkLoggedIn, mid.getProjectId, mid.getUserProjectRole, mid.accessProject, mid.getProjectStatus, function(req, res, next) {
     //When making changes to project, many things should run through history events and propogate to project changes
     //The first edit by the admin to approve the project should run through this process too in order to ensure that
     //the history state gets updated to reflect the approval. This is normally done through button press.
@@ -92,9 +112,20 @@ module.exports = function () {
   router.get('/newProject', mid.checkLoggedIn, mid.checkClient, function(req, res, next) {
     res.locals.mongoHelper.getEngineers().then(function(engineers) {
       var selectData = {engineers: engineers, priorities: priorities.pSelectData};
-      var formVals = kusetManagerP.getFormVals("register", null, selectData);
-      var formData = {name: "newProjectForm", scriptName: "newProject", submitText: "Submit", submitPath: "/newProject", vals: formVals, cancelPath: "/projects"};
-      res.render('projectNew', {formData: formData});
+      var formData = {
+        name: "newProjectForm",
+        scriptName: "newProject",
+        submitText: "Submit",
+        submitPath: "/newProject",
+        vals: kusetManagerP.getFormVals("register", null, selectData),
+        cancelPath: "/projects",
+      };
+      var pugData = {
+        formData: formData,
+        mainId: "newProject",
+        heading: "New Project"
+      }
+      res.render('standardNewForm', pugData);
     }, function(reason) {
       console.error(reason);
       next(reason);
@@ -137,7 +168,7 @@ module.exports = function () {
     });
   });
 
-  router.get('/REST/projectKusets', mid.checkLoggedIn, function(req, res, next) {
+  router.get('/REST/projectKusets', function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');
     res.send(kusetManagerP.getFormVals());
   });
@@ -170,9 +201,54 @@ module.exports = function () {
   });
 
 
+  //-----------------------REVIEWS------------------------
+  router.get('/review', mid.getProjectId, mid.getUserProjectRole, mid.checkUserIsProjectClient, function(req, res, next) {
+    //Check that project needs review and that user is the client
+    var selectData = scoreInfo.getSelectData();
+    var formData = {
+      name: "reviewForm",
+      scriptName: "review",
+      submitText: "Submit",
+      submitPath: "/review?id=" + res.locals.projectId,
+      vals: kusetManagerR.getFormVals("register", null, selectData),
+      cancelPath: "/project?id=" + res.locals.projectId,
+    };
+    var pugData = {
+      formData: formData,
+      mainId: "review",
+      heading: "Project Review",
+      wide: true
+    }
+    res.render('standardNewForm', pugData);
+  });
+
+  router.get('/REST/reviewKusets', function(req, res, next) {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(kusetManagerR.getFormVals());
+  });
+
+  router.post('/review', mid.getProjectId, mid.getUserProjectRole, mid.checkUserIsProjectClient, function(req, res, next) {
+    console.log("Posting to review with data:");
+    console.log(req.body);
+    console.log("Tidying values");
+    let reviewData = kusetManagerR.tidyVals(req.body);
+    console.log("Tidy values:");
+    console.log(reviewData);
+    reviewData.clientUser = res.locals.projectRoles.Client;
+    reviewData.responsibleUser = res.locals.projectRoles.Resp;
+    reviewData.project = res.locals.projectId;
+    res.locals.mongoHelper.createDoc("Review", reviewData).then(function (response) {
+      res.redirect(res.locals.subRoute + '/project?id=' + res.locals.projectId);
+    }, function (reason) {
+      console.error(reason);
+      next(reason);
+    });
+  });
+
+
   //----------------------HISTORY-------------------------------
 
-  router.get('/REST/historyKusets', mid.checkLoggedIn, function(req, res, next) {
+  router.get('/REST/historyKusets', function(req, res, next) {
     res.setHeader('Content-Type', 'application/json');
     res.send(kusetManagerH.getFormVals());
   });
@@ -196,16 +272,10 @@ module.exports = function () {
     var historyId = res.locals.historyId;
     switch(actionType) {
       case "approve":
-        res.locals.mongoHelper.approveHistory(historyId, req.session.userId).then(function(result) {
-          updateProjectAnd201(res);
-        }, function(reason) {
-          console.error(reason);
-          next(reason);
-        });
+        approveHistory(false);
         break;
       case "modify":
-        break;
-      case "reject":
+        approveHistory(true);
         break;
       case "delete":
         res.locals.mongoHelper.deleteDoc(History, historyId).then(function(result) {
@@ -219,6 +289,15 @@ module.exports = function () {
         var err = new Error ("Invalid actionType: " + actionType);
         console.error(err);
         next(err);
+    }
+
+    function approveHistory (withMods) {
+      res.locals.mongoHelper.approveHistory(historyId, req.session.userId, withMods).then(function(result) {
+        updateProjectAnd201(res);
+      }, function(reason) {
+        console.error(reason);
+        next(reason);
+      });
     }
   });
 
@@ -347,14 +426,6 @@ module.exports = function () {
         res.send('null');
         res.status(404).end();
       }
-    });
-  });
-
-//----------------------OTHER-------------------------------
-
-  router.get("/reset", function (req, res, next) {
-    res.locals.mongoHelper.reset().then(function () {
-      res.render('message', {title: "Hello", message: "DB Reset", loggedOut: true});
     });
   });
 

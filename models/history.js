@@ -56,7 +56,7 @@ var HistorySchema = new mongoose.Schema({
   actionResult: {
     type: Number,
     required: false,
-    default: 0    //0: No action, 1: Rejected, 2: Accepted with Mods, 3: Accepted
+    default: 0    //0: No action, 1: Accepted with Mods, 2: Accepted
   },
   notifiable: {
     type: Boolean,
@@ -111,7 +111,7 @@ HistorySchema.pre('validate', function(next) {
 
 HistorySchema.pre('save', function(next) {
   var history = this;
-  var actionResultText = ["none", "rejected", "accepted with modifications", "accepted"];
+  var actionResultText = ["none", "required modifications", "accepted"];
   if (history.isModified('actionResult')) {
     console.log("Action result modified");
   //Trying to perform an action
@@ -134,7 +134,7 @@ HistorySchema.post('save', function() {
   //Maybe move this stuff to mongoHelper.resolveProjectHistories?
   console.log("Running post save hook");
   var history = this;
-  if (history.actionResult>2 && history.specialType == 1) {
+  if (history.actionResult && history.specialType == 1) {
     var projectData = {
       status: "Ongoing",
       subStatus: "In Progress"
@@ -153,21 +153,17 @@ HistorySchema.post('save', function() {
   }
 });
 
-HistorySchema.methods.approve = function approve (userId) {
-  console.log("Approving history with userId: " + userId);
+HistorySchema.methods.approve = function approve (userId, withMod) {
   var history = this;
-  return action (history, userId, 3);
+  if (withMod) {
+    console.log("ApproveModing history with userId: " + userId);
+    return action (history, userId, 1);
+  } else {
+    console.log("Approving history with userId: " + userId);
+    return action (history, userId, 1);
+  }
 }
 
-HistorySchema.methods.appMod = function appMode (userId) {
-  var history = this;
-  return action (history, userId, 2);
-}
-
-HistorySchema.methods.reject = function reject (userId) {
-  var history = this;
-  return action (history, userId, 1);
-}
 
 function action (history, userId, actionResult) {
   return new Promise (function (fulfill, reject) {

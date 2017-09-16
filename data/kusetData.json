@@ -87,6 +87,44 @@
       }
     ]
   },
+  "review": {
+    "configs": {
+      "register": {
+        "allowInput": true
+      }
+    },
+    "defaultKuset": {
+      "permanent": true,
+      "required": true,
+      "register": true
+    },
+    "kusets": [
+      {
+        "id": "qualityScore",
+        "text": "How was the overall quality of the project?",
+        "selectTag": "goodScore"
+      },
+      {
+        "id": "coopScore",
+        "text": "How was the cooperation with the engineer?",
+        "selectTag": "goodScore"
+      },
+      {
+        "id": "recommendScore",
+        "text": "Would you recommend this engineer in future?",
+        "selectTag": "recommendScore"
+      },
+      {
+        "id": "comment",
+        "text": "Leave us a short review of your experience",
+        "required": false,
+        "textBox": true,
+        "rows": 8,
+        "placeHolder": "",
+        "maxLen": 500
+      }
+    ]
+  },
   "history": {
     "configs": {
       "register": {

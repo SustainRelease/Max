@@ -2,10 +2,12 @@ table.dataTable.fullWidth
   tr
     th Responsible
     th Quality check
+    th Client
     th Start Date
     th End Date
-    th Spent hours
-    th Expected Hours
+    if isEngineer
+      th Spent hours
+      th Expected Hours
     th Status
     th Progress
   tr
@@ -13,10 +15,13 @@ table.dataTable.fullWidth
       a(href = subR + "/user?id=" + projectData.responsibleUser) #{projectData.responsibleUserName}
     td
       a(href = subR + "/user?id=" + projectData.qcUser) #{projectData.qcUserName}
+    td
+      a(href = subR + "/user?id=" + projectData.clientUser) #{projectData.clientUserName}
     td #{projectData.startDate}
     td #{projectData.endDate}
-    td #{projectData.spentHours}
-    td #{projectData.expectedHours}
+    if isEngineer
+      td #{projectData.spentHours}
+      td #{projectData.expectedHours}
     td #{projectData.status}
     td #{projectData.progress}%
 progress(value=projectData.progress max="100")

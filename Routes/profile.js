@@ -10,12 +10,34 @@ module.exports = function () {
   var kusetManager = require('../node/kusetManager')(userKusetData);
 
   router.get('/register', function(req, res, next) {
+    console.log("Get register");
     res.locals.mongoHelper.getClientCompanies().then(function(clients) {
-      var selectData = {clients: clients};
-      var formVals = kusetManager.getFormVals("register", null, selectData);
-      var formData = {name: "userForm", scriptName: "userNew", submitText: "Submit", submitPath: "/register", vals: formVals};
-      var pugData = {formData: formData, loggedOut: true}
-      res.render('userNew', pugData);
+      console.log("Got client companies");
+      if (clients) {
+        console.log("Clients found");
+        var selectData = {clients: clients};
+      } else {
+        console.log("No clients found");
+        var selectData = {clients: null};
+      }
+      var formData = {
+        name: "userForm",
+        scriptName: "userNew",
+        submitText: "Submit",
+        submitPath: "/register",
+        vals: kusetManager.getFormVals("register", null, selectData),
+      };
+      var pugData = {
+        formData: formData,
+        mainId: "register",
+        heading: "Registration",
+        runCode: "noClients();",
+        pg: "Complete the forms below and accept terms and conditions, to register into our platform:",
+      }
+      res.render('standardNewForm', pugData);
+    }, function(reason) {
+      console.error(reason);
+      next(reason);
     });
   })
 
@@ -53,7 +75,7 @@ module.exports = function () {
     });
   });
 
-  router.get('/profile', mid.checkLoggedIn, function(req, res, next) {  //The users own profile
+  router.get('/profile', mid.checkLoggedIn, mid.getQueryUser, mid.getEngineerReviews, function(req, res, next) {  //The users own profile
     res.locals.mongoHelper.getDocData(User, req.session.userId).then(function (profile) {
       if (req.query.edit) {
         //console.log("Ex profile data:");
@@ -72,21 +94,15 @@ module.exports = function () {
   });
 
 
-  router.get('/user', mid.checkLoggedIn, function(req, res, next) {
+  router.get('/user', mid.checkLoggedIn, mid.getQueryUser, mid.getEngineerReviews, function(req, res, next) {
     var userId = req.session.userId;
-    if (req.query.id) {
-      var qUserId = req.query.id
-      console.log("qUserId found: " + qUserId);
-    } else {
-      console.log("qUserId not found, setting to userId");
-      var qUserId = userId;
-    }
+    var qUserId = res.locals.qUserId;
     if (qUserId == userId) {
        //If they are looking at themselves, redirect to profile
       res.redirect(res.locals.subRoute + '/profile');
     } else {
       //Otherwise, go to profile as visitor
-      res.locals.mongoHelper.docPermission (User, userId, qUserId).then(function(allowAccess) {
+      res.locals.mongoHelper.userPermission(userId, qUserId).then(function(allowAccess) {
         if (!allowAccess) {
           console.error("Access to user " + qUserId + " denied to user " + req.session.userId);
           next(new Error ("Access to user denied"));
@@ -133,13 +149,10 @@ module.exports = function () {
   });
 
   router.get('/login', function(req, res, next) {
-    console.log("Router Getting form vals");
     var formVals = kusetManager.getFormVals("login");
-    console.log("Router Got form vals");
     var formData = {name: "loginForm", scriptName: "login", submitText: "Submit", submitPath: "/login", vals: formVals};
     var pugData = {formData: formData, loggedOut: true, badAuth: req.query.badAuth};
     res.render('login', pugData);
-    console.log("Rendered login");
 
     /*
     var formVals = kusetManager.getFormVals("login");
@@ -155,7 +168,12 @@ module.exports = function () {
       if (user) {
         console.log("Authentication success");
         req.session.userId = user._id;
-        res.redirect(res.locals.subRoute + '/profile');
+        res.locals.sHelper.resetUserStatus(res).then(function(response) { //Resets user status variables
+          res.redirect(res.locals.subRoute + '/profile');
+        }, function(reason) {
+          console.error(reason);
+          next(reason);
+        });
       } else {
         console.log("Authentication failure");
         res.redirect(res.locals.subRoute + '/login?badAuth=true');

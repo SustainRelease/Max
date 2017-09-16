@@ -1,0 +1,13 @@
+extends layout
+
+block content
+  -var divClass = "main tCenter";
+  -if (wide) {
+  - divClass = divClass + " wide";
+  -}
+  div(id=mainId class=divClass)
+    if (heading)
+      h1=heading
+    if (pg)
+      p=pg
+    include ./partials/_form.pug

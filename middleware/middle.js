@@ -1,6 +1,7 @@
 var History = require("../models/history.js");
 var Project = require("../models/project.js");
 var adminCompanyName = require("../data/adminData.json").companyName;
+var scoreInfo = require("../data/scoreInfo.js");
 
 
 
@@ -33,47 +34,40 @@ function getClients(req, res, next) {
 
 //-------------------User stuff------------------
 
-function checkLoggedInOLD(req, res, next) {
-  if (req.session && req.session.userId) {
-    return res.locals.mongoHelper.doesDocExist("User", req.session.userId).then(function (doesExist) {
-      if (doesExist) {
-        next();
-      } else {
-        console.log("Access denied to " + req.url + ": User not found");
-        console.log(req.session.userId);
-        console.log("Redirecting to login");
-        res.redirect(res.locals.subRoute + '/login');
-      }
-      return;
-    }, function (reason) {
-      console.error(reason);
-      next(reason);
-    });
-  } else {
-    console.log("Access denied to " + req.url + ": No session found");
-    console.log("Redirecting to login");
-    res.redirect(res.locals.subRoute + '/login');
-    return;
-  }
-}
-
-
 function checkUserData (req, res, next, key, value) {
   if (!res.locals.loggedIn) {
     console.log("Redirecting to login (checkUserData) from url " + req.url);
     res.redirect(res.locals.subRoute + '/login');
-  }
-  res.locals.mongoHelper.userQuery(req.session.userId).then(function(userData) {
-    if(userData[key] == value) {
+  } else {
+    if (res.locals[key] == value) {
       next();
     } else {
       console.log("Access denied");
       res.redirect(res.locals.subRoute + '/profile');
     }
-  }, function (reason) {
-    console.error(reason);
-    next(reason);
-  });
+  }
+}
+
+function getQueryUser (req, res, next) {
+  if (!req.query.id) {
+    console.log("qUserId not found, setting to userId");
+    res.locals.qUserId = req.session.userId;
+    //Just copy values across from user
+    res.locals.qUserIsEngineer = res.locals.isEngineer;
+    res.locals.qUserIsAdmin = res.locals.isAdmin;
+    next();
+  } else {
+    //Set query userId and get qUser data
+    res.locals.qUserId = req.query.id;
+    res.locals.mongoHelper.userQuery(res.locals.qUserId).then(function(userData) {
+      res.locals.qUserIsEngineer = userData.isEng;
+      res.locals.qUserIsAdmin = userData.isAdmin;
+      next();
+    }, function(reason) {
+      console.error(reason);
+      next(reason);
+    });
+  }
 }
 
 function checkLoggedIn (req, res, next) {
@@ -86,32 +80,15 @@ function checkLoggedIn (req, res, next) {
 }
 
 function checkEngineer(req, res, next) {
-  return checkUserData(req, res, next, "isEng", true);
+  return checkUserData(req, res, next, "isEngineer", true);
 }
 
 function checkClient(req, res, next) {
-  return checkUserData(req, res, next, "isEng", false);
+  return checkUserData(req, res, next, "isEngineer", false);
 }
 
 function checkAdmin(req, res, next) {
   return checkUserData(req, res, next, "isAdmin", true);;
-}
-
-function getUserStatus(req, res, next) {
-  if (req.session && req.session.userId) {
-    res.locals.loggedIn = true;
-    res.locals.mongoHelper.userQuery(req.session.userId).then(function(userData) {
-      res.locals.isEngineer = userData.isEng;
-      res.locals.isAdmin = userData.isAdmin;
-      res.locals.companyId = userData.companyId;
-      next();
-    }, function (reason) {
-      console.error(reason);
-      next(reason);
-    });
-  } else {
-    next();
-  }
 }
 
 function getUserProjectRole(req, res, next) {
@@ -146,6 +123,25 @@ function getUserProjectRole(req, res, next) {
     console.error(reason);
     next(reason);
   });
+}
+
+function checkUserIsProjectClient (req, res, next) {
+  if (!res.locals.loggedIn) {
+    console.log("Redirecting to login (checkUserIsProjectClient) from url " + req.url);
+    res.redirect(res.locals.subRoute + '/login');
+  } else {
+    if (!res.locals.userProjectRole) {
+      console.log("WARNING: userProjectRole not set");
+      res.redirect(res.locals.subRoute + '/project?id=' + res.locals.projectId);
+    } else {
+      if (res.locals.userProjectRole == "Client") {
+        next();
+      } else {
+        console.log("Access denied: User is not project client");
+        res.redirect(res.locals.subRoute + '/project?id=' + res.locals.projectId);
+      }
+    }
+  }
 }
 
 //--------------------History stuff----------------
@@ -235,16 +231,12 @@ function getProjectId(req, res, next) {
 }
 
 function accessProject(req, res, next) {
-  var projectId = res.locals.projectId
-  res.locals.mongoHelper.docPermission(Project, projectId, req.session.userId).then(function(allowAccess) {
-    console.log("AllowAccess: " + allowAccess);
-    if(!allowAccess) {
-      console.error("Access to project " + projectId + " denied to user " + req.session.userId);
-      next(new Error ("Access to project denied"));
-    } else {
-      next();
-    }
-  });
+  if (res.locals.userProjectRole == "None") {
+    console.error("Access to project " + projectId + " denied to user " + req.session.userId);
+    res.redirect(res.locals.subRoute + '/profile');
+  } else {
+    next();
+  }
 }
 
 function getProjectStatus(req, res, next) {
@@ -289,6 +281,33 @@ function getProjects (req, res, next) {
   });
 }
 
+
+//--------------------REVIEWS----------------
+
+function getEngineerReviews(req, res, next) {
+  if (res.locals.qUserIsEngineer) {
+    console.log("Query user is engineer, getting reviews");
+    res.locals.mongoHelper.getDocs("Review", {responsibleUser: res.locals.qUserId}, {}).then(function(docs) {
+      if (docs) {
+        res.locals.reviews = docs;
+        console.log("Getting average scores");
+        var collatedData = scoreInfo.collateReviews(docs);
+        console.log(collatedData);
+      } else {
+        console.log("None found");
+        res.locals.reviews = null;
+      }
+      next();
+    }, function(reason) {
+      next(reason);
+    });
+  } else {
+    console.log("User is not an engineer");
+    next();
+  }
+}
+
+
 module.exports.getCompanies = getCompanies;
 module.exports.getClients = getClients;
 
@@ -296,11 +315,12 @@ module.exports.checkLoggedIn = checkLoggedIn;
 module.exports.checkEngineer = checkEngineer;
 module.exports.checkClient = checkClient;
 module.exports.checkAdmin = checkAdmin;
+module.exports.getQueryUser = getQueryUser;
 
 module.exports.resolveFileCode = resolveFileCode;
 
-module.exports.getUserStatus = getUserStatus;
 module.exports.getUserProjectRole = getUserProjectRole;
+module.exports.checkUserIsProjectClient = checkUserIsProjectClient;
 
 module.exports.getProjectId = getProjectId;
 module.exports.accessProject = accessProject;
@@ -311,3 +331,5 @@ module.exports.getProjectHistories = getProjectHistories;
 module.exports.getNotifications = getNotifications;
 module.exports.getHistoryId = getHistoryId;
 module.exports.getHistoryProject = getHistoryProject;
+
+module.exports.getEngineerReviews = getEngineerReviews;
