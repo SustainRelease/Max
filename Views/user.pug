@@ -2,22 +2,10 @@ extends layout
 
 block content
   div#profile.main
-    div.pho_view
-      div.tCenter
-        img#profile_pic(src= subR + "/REST/profilePic")
-        h1 #{user.firstName} #{user.lastName}
-        div
-          if (ownProfile)
-            a.clean.fancy(href= subR + "/profile?edit=true") Edit Profile
-          else
-            a.clean.fancy(href="#") Private Message
-        if (user.country)  
-          p #{user.country} <br /> Joined in #{user.joinedDateMonthy}
-        else
-          p Joined in #{user.joinedDateMonthy}
-    div.tab_view
-      div.flex_box
-        div.flex_item.two_third.left
+    div.block
+      div.pho_view
+        div.tCenter
+          img#profile_pic(src= subR + "/REST/profilePic")
           h1 #{user.firstName} #{user.lastName}
           div
             if (ownProfile)
@@ -28,53 +16,85 @@ block content
             p #{user.country} <br /> Joined in #{user.joinedDateMonthy}
           else
             p Joined in #{user.joinedDateMonthy}
-        div.flex_item.third.tCenter
-          img#profile_pic(src= subR + "/REST/profilePic")
-    div.lap_view
+      div.tab_view
+        div.flex_box
+          div.flex_item.two_third.left
+            h1 #{user.firstName} #{user.lastName}
+            div
+              if (ownProfile)
+                a.clean.fancy(href= subR + "/profile?edit=true") Edit Profile
+              else
+                a.clean.fancy(href="#") Private Message
+            if (user.country)  
+              p #{user.country} <br /> Joined in #{user.joinedDateMonthy}
+            else
+              p Joined in #{user.joinedDateMonthy}
+          div.flex_item.third.tCenter
+            img#profile_pic(src= subR + "/REST/profilePic")
+      div.lap_view
+        div.flex_box
+          div.flex_item
+            img#profile_pic(src= subR + "/REST/profilePic")
+          div.flex_item
+            h1.fullWidth #{user.firstName} #{user.lastName} <br />
+            if (user.country)  
+              p #{user.country} <br /> Joined in #{user.joinedDateMonthy}
+            else
+              p Joined in #{user.joinedDateMonthy}
+          div.flex_item
+            if (ownProfile)
+              a.clean.fancy(href= subR + "/profile?edit=true") Edit Profile
+            else
+              a.clean.fancy(href="#") Private Message
       div.flex_box
-        div.flex_item
-          img#profile_pic(src= subR + "/REST/profilePic")
-        div.flex_item
-          h1.fullWidth #{user.firstName} #{user.lastName} <br />
-          if (user.country)  
-            p #{user.country} <br /> Joined in #{user.joinedDateMonthy}
-          else
-            p Joined in #{user.joinedDateMonthy}
-        div.flex_item
-          if (ownProfile)
-            a.clean.fancy(href= subR + "/profile?edit=true") Edit Profile
-          else
-            a.clean.fancy(href="#") Private Message
-    div.flex_box
-      if (user.age || user.birthCountry)
-        div.flex_item.third
-          h2 Personal Data
-          if (user.age)
-            p Age: #{user.age}
-          if (user.birthCountry)
-            p From: #{user.birthCountry}
+        if (user.age || user.birthCountry)
+          div.flex_item.third
+            h2 Personal Data
+            if (user.age)
+              p Age: #{user.age}
+            if (user.birthCountry)
+              p From: #{user.birthCountry}
 
-    -var lText = ["English", "Spanish", "Portuguese"];
-    -var lVals = [user.engLev, user.spaLev, user.porLev];
-    -var nLangs = 0;
-    -for (var i = 0; i < 3; i++) {
-    - if (lVals[i] != "None") {
-    - nLangs++
-    - }
-    -}
-    if nLangs
-      div.weeVertMargin
-        h2 Languages
-        ul
-        -for (var i = 0; i < 3; i++) {
-        - if (lVals[i] != "None") {
-          li #{lText[i]}: #{lVals[i]}
-        - }
-        -}
-    if user.jobDesc
-      h2 Jobs
-      p #{user.jobDesc}
-    if user.stuDesc
-      h2 Studies
-      p #{user.stuDesc}
-    h2 Reviews
+      -var lText = ["English", "Spanish", "Portuguese"];
+      -var lVals = [user.engLev, user.spaLev, user.porLev];
+      -var nLangs = 0;
+      -for (var i = 0; i < 3; i++) {
+      - if (lVals[i] != "None") {
+      - nLangs++
+      - }
+      -}
+      if nLangs
+        div.weeVertMargin
+          h2 Languages
+          ul
+          -for (var i = 0; i < 3; i++) {
+          - if (lVals[i] != "None") {
+            li #{lText[i]}: #{lVals[i]}
+          - }
+          -}
+      if user.jobDesc
+        h2 Jobs
+        p #{user.jobDesc}
+      if user.stuDesc
+        h2 Studies
+        p #{user.stuDesc}
+    if (reviews)
+      div.block
+        h2.weeVertMargin Reviews
+        -var texts = ["Quality", "Cooperation", "Recommendation"];
+        -var values = [collatedReviews.qualityScore+1, collatedReviews.coopScore+1, collatedReviews.recommendScore+1];
+        -var overall = collatedReviews.overall + 1;
+        -for (let i = 0; i < texts.length; i++)
+          p #{texts[i]}: #{values[i]}/5
+        b Overall: #{overall}
+        each review in reviews
+          div.flex_box
+            div.flex_item.third
+              -var values = [review.qualityScore+1, review.coopScore+1, review.recommendScore+1];
+              -for (let i = 0; i < texts.length; i++)
+                p #{texts[i]}: #{values[i]}/5
+            div.flex_item
+              p #{review.comment}
+              
+            
+            

@@ -1,32 +1,39 @@
-/*TO DO:
- *  Modularize!!!
- *  getAuth() uses "Navalis" project specific token name
- *
- *
- */
 
-
-var fs = require('fs');
-var readline = require('readline');
 var google = require('googleapis');
-var service = google.drive('v3');
-var googleAuth = require('google-auth-library');
+var drive = google.drive('v3');
 var Promise = require('promise');
 
 var auth;
-var masterFolderId = "0B_vUIo8iD_BvVHRweTRsX2Nmcnc";
+var masterFolderId;
 var fields = "id, name, mimeType, parents, modifiedTime";
 var tidyFunction = function (file) {return file;};
 
 
-function makeFolderName (client, name) {
-  return client + " - " + name;
+function init(authIn, masterFolderIdIn, fieldsIn, tidyFunctionIn) {
+  if (authIn) {
+    auth = authIn;
+  } else {
+    console.error("No auth included");
+  }
+  if (masterFolderIdIn) {
+    masterFolderId = masterFolderIdIn;
+  } else {
+    console.error("No masterFolderId included");
+  }
+  if (fieldsIn) {fields = fieldsIn};
+  if (tidyFunctionIn) {tidyFunction = tidyFunctionIn};
 }
 
-function createProjectFolder(projectId, client, name, description) {
+function makeFolderName (clientName, name) {
+  return clientName + " - " + name;
+}
+
+function createProjectFolder(projectId, clientName, name, description) {
   return new Promise (function(fulfill, reject) {
+    console.log("Creating project folder with auth: ");
+    console.log(auth);
     var fileMetadata = {
-      'name' : makeFolderName(client, name),
+      'name' : makeFolderName(clientName, name),
       'description': description,
       'mimeType' : 'application/vnd.google-apps.folder',
       'parents': [masterFolderId],
@@ -34,7 +41,7 @@ function createProjectFolder(projectId, client, name, description) {
         'mongoId': projectId
       }
     };
-    service.files.create({
+    drive.files.create({
        resource: fileMetadata,
        fields: 'id',
        auth: auth
@@ -50,26 +57,6 @@ function createProjectFolder(projectId, client, name, description) {
   });
 }
 
-
-function listPermissions (folderId) {
-//WHY DOESN'T THIS WORK
-  return new Promise (function (fulfill, reject) {
-    service.permissions.list({
-      fileId: folderId,
-      auth: auth
-    }, function (err, response) {
-      if (err) {
-        console.error(err);
-        reject(err);
-      } else {
-        console.log("Permissions");
-        console.log(response);
-        fulfill(response);
-      }
-    });
-  });
-}
-
 function addPermission (folderId, gmail) {
   return new Promise (function (fulfill, reject) {
     var permResource = {
@@ -78,7 +65,7 @@ function addPermission (folderId, gmail) {
       "emailAddress": gmail,
       "role": "writer"
     }
-    service.permissions.create({
+    drive.permissions.create({
       fileId: folderId,
       auth: auth,
       resource: permResource
@@ -88,17 +75,6 @@ function addPermission (folderId, gmail) {
     });
   });
 }
-
-function init(secretPath, fieldsIn, tidyFunctionIn) {
-  return new Promise (function (fulfill, reject) {
-    if(fieldsIn) {fields = fieldsIn;}
-    if(tidyFunctionIn) {tidyFunction = tidyFunctionIn;}
-    getAuth(secretPath).then(function (res) {
-      fulfill();
-    });
-  });
-}
-
 
 function getProjectFiles(folderId, projectFolderId) {
   //Returns an array of the files in a given folder and the folder itself (with the folder being the first item)
@@ -121,8 +97,7 @@ function getProjectFiles(folderId, projectFolderId) {
 }
 
 function getFolderConts(folderId) {
-  if (!checkAuth()) return false;
-  else return getFiles({parent: folderId}, "id, name, mimeType, parents, modifiedTime");
+  return getFiles({parent: folderId}, "id, name, mimeType, parents, modifiedTime");
 }
 
 function getFiles (queryObj, fields) {
@@ -134,7 +109,7 @@ function getFiles (queryObj, fields) {
     }
     if ("name" in queryObj) qStrings.unshift("name = '" + queryObj.name + "'");
     if (!qStrings.length) reject(new error ("Invalid query object"));
-    service.files.list({
+    drive.files.list({
       q: qStrings.join(" and "),
       auth: auth,
       pageSize: 10,
@@ -146,17 +121,9 @@ function getFiles (queryObj, fields) {
   });
 }
 
-function getFile (queryObj, fields) {
-  return getFiles(queryObj, fields).then(function (files) {
-    return getSingleItem(files);
-  });
-}
-
-
-
 function getFileById(id) {
   return new Promise(function (fulfill, reject) {
-    service.files.get({
+    drive.files.get({
       fileId: id,
       auth: auth,
       fields: "id, name, mimeType, parents, modifiedTime"
@@ -171,133 +138,7 @@ function getFileById(id) {
   });
 }
 
-function getSingleItem(obj) {
-  if (obj) {
-    if (obj.length == 1) {
-      return obj[0];
-    } else {
-      console.log("More than one item found");
-      return false;
-    }
-  } else {
-    console.log("No items found");
-    return false;
-  }
-}
-
-function getAuth(secretPath, scopes) {
-  // If modifying these scopes, delete your previously saved credentials
-  // at ~/.credentials/drive-nodejs-quickstart.json
-  if (!scopes) scopes = ['https://www.googleapis.com/auth/drive'];
-  if (secretPath.substr(secretPath.length - 5) != ".json") {
-    console.error("SecretPath must point to .json");
-    return;
-  }
-  var SCOPES = scopes;
-  var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-      process.env.USERPROFILE) + '/.credentials/';
-  var TOKEN_PATH = TOKEN_DIR + "navalis.json";
-
-  function readFile (fileName) {
-    return new Promise(function (fulfill, reject){
-      fs.readFile(fileName, function (err, res){
-        if (err) {
-          console.log("File not found:");
-          console.log(fileName);
-          reject(err);
-        } else {
-          fulfill(res);
-        }
-      });
-    });
-  }
-
-  function readJSON(fileName) {
-    return readFile(fileName).then(JSON.parse);
-  }
-
-  function authorize(credentials) {
-    return new Promise(function (fulfill, reject) {
-      var clientSecret = credentials.installed.client_secret;
-      var clientId = credentials.installed.client_id;
-      var redirectUrl = credentials.installed.redirect_uris[0];
-      var newAuth = new googleAuth();
-      var oauth2Client = new newAuth.OAuth2(clientId, clientSecret, redirectUrl);
-
-      // Check if we have previously stored a token.
-      fs.readFile(TOKEN_PATH, function(err, token) {
-        if (err) {
-          getNewToken(oauth2Client).then(function(res) {
-            auth = res;
-            fulfill(auth);
-          });
-        } else {
-          console.log("Current token found at " + TOKEN_PATH);
-          oauth2Client.credentials = JSON.parse(token);
-          auth = oauth2Client;
-          fulfill(auth);
-        }
-      });
-    });
-  }
-
-  function getNewToken(oauth2Client) {
-    return new Promise(function (fulfill, reject) {
-      var authUrl = oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: SCOPES
-      });
-      console.log('Authorize this app by visiting this url: ', authUrl);
-      var rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-      });
-      rl.question('Enter the code from that page here: ', function(code) {
-        rl.close();
-        oauth2Client.getToken(code, function(err, token) {
-          if (err) {
-            reject(err);
-          }
-          oauth2Client.credentials = token;
-          storeToken(token).then(fulfill(oauth2Client));
-        });
-      });
-    });
-  }
-
-  function storeToken(token) {  //MAYBE THIS DOESN'T WORK
-    return new Promise(function (fulfill, reject) {
-      try {
-        fs.mkdirSync(TOKEN_DIR);
-      } catch (err) {
-        if (err.code != 'EEXIST') {
-          reject(err);
-        }
-      }
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-      console.log('Token stored to ' + TOKEN_PATH);
-      fulfill();
-    });
-  }
-
-  return new Promise(function (fulfill, reject) {
-    return readJSON(secretPath).then(function(json) {
-      fulfill(authorize(json));
-    });
-  });
-}
-
-function checkAuth() {
-  if (auth) {
-    return true;
-  } else {
-    console.error("Authorization not setup");
-    return false;
-  }
-}
-
 module.exports.createProjectFolder = createProjectFolder;
 module.exports.getProjectFiles = getProjectFiles;
 module.exports.init = init;
 module.exports.addPermission = addPermission;
-module.exports.listPermissions = listPermissions;

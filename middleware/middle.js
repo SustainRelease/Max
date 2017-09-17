@@ -50,7 +50,6 @@ function checkUserData (req, res, next, key, value) {
 
 function getQueryUser (req, res, next) {
   if (!req.query.id) {
-    console.log("qUserId not found, setting to userId");
     res.locals.qUserId = req.session.userId;
     //Just copy values across from user
     res.locals.qUserIsEngineer = res.locals.isEngineer;
@@ -71,6 +70,7 @@ function getQueryUser (req, res, next) {
 }
 
 function checkLoggedIn (req, res, next) {
+  console.log("Checking logged in");
   if (res.locals.loggedIn) {
     next();
   } else {
@@ -92,6 +92,7 @@ function checkAdmin(req, res, next) {
 }
 
 function getUserProjectRole(req, res, next) {
+  console.log("Getting user project role");
   var query = {"_id": res.locals.projectId};
   var projection = {responsibleUser: true, qcUser: true, clientUser: true};
   res.locals.mongoHelper.getOneDoc(Project, query, projection).then(function(doc) {
@@ -100,12 +101,15 @@ function getUserProjectRole(req, res, next) {
     var adminId = res.locals.mongoHelper.getAdminId();
 
     //Setup project role object
-    var projectRoles = {
-      "Resp": projectData.responsibleUser,
-      "QC": projectData.qcUser,
-      "Client": projectData.clientUser,
-      "Admin": adminId
-    };
+    var projectRoles = {"Admin": adminId};
+    var pdKeys = ["responsibleUser", "qcUser", "clientUser"];
+    var prKeys = ["Resp", "QC", "Client"];
+    for (let i = 0; i < pdKeys.length; i++) {
+      if (projectData[pdKeys[i]]) {
+        projectRoles[prKeys[i]] = projectData[pdKeys[i]];
+      }
+    }
+    
     res.locals.projectRoles = projectRoles;
 
     //Determine what role the user has in the project
@@ -219,6 +223,7 @@ function resolveFileCode (req, res, next) {
 //--------------------Project stuff----------------
 
 function getProjectId(req, res, next) {
+  console.log("Getting project Id");
   if (!req.query.id) {
     var err = new Error ("No project Id found");
     console.error(err);
@@ -231,6 +236,7 @@ function getProjectId(req, res, next) {
 }
 
 function accessProject(req, res, next) {
+  console.log("Accessing Project");
   if (res.locals.userProjectRole == "None") {
     console.error("Access to project " + projectId + " denied to user " + req.session.userId);
     res.redirect(res.locals.subRoute + '/profile');
@@ -253,7 +259,17 @@ function getProjectStatus(req, res, next) {
 }
 
 function getProjects (req, res, next) {
-  res.locals.mongoHelper.getProjects(req.session.userId, res.locals.isAdmin).then(function(projects) {
+  var query;
+  if (res.locals.isAdmin) {
+    query = {};
+  } else {
+    if (res.locals.isEngineer) {
+      query = {"$or": [{"responsibleUser": req.session.userId}, {"qcUser": req.session.userId}]};
+    } else {
+      query = {"clientUser": req.session.userId};
+    }
+  }
+  res.locals.mongoHelper.getDocs(Project, query).then(function(projects) {
     var sProjects = [];
     var oProjects = [];
     var fProjects = [];
@@ -293,6 +309,7 @@ function getEngineerReviews(req, res, next) {
         console.log("Getting average scores");
         var collatedData = scoreInfo.collateReviews(docs);
         console.log(collatedData);
+        res.locals.collatedReviews = collatedData;
       } else {
         console.log("None found");
         res.locals.reviews = null;

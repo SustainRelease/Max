@@ -4,7 +4,6 @@ module.exports = function () {
   var mid = require('../middleware/middle.js');
   var Project = require("../models/project.js");
   var History = require("../models/history.js");
-  var myDriveHelper = require("../node/myDriveHelper.js");
   var multiPromiseLib = require("../node/multiPromise.js");
 
   var kusetData = require("../data/kusetData.json")
@@ -134,11 +133,10 @@ module.exports = function () {
 
   router.post('/newProject', mid.checkLoggedIn, function(req, res, next) {
     let projectData = kusetManagerP.tidyVals(req.body);
-    var extra = {userId: req.session.userId, driveHelper: myDriveHelper};
+    var extra = {userId: req.session.userId, driveHelper: res.locals.driveHelper};
     res.locals.mongoHelper.createDoc(Project, projectData, extra).then(function (projectResponse) {
-      req.session.projectFolderId = projectResponse.driveId;
       var projectId = projectResponse.docId;
-      res.locals.projectId = projectId;
+      console.log("projectId: " + projectId);
       var hData = {
         text: "Project created by client",
         project: projectId,
@@ -146,6 +144,8 @@ module.exports = function () {
         spentHours: 0,
         totalProgress: 0
       };
+      console.log("hData");
+      console.log(hData);
       var projectRoles = {
         "Client": projectData.clientUser,
         "Admin": res.locals.mongoHelper.getAdminId()
@@ -180,15 +180,22 @@ module.exports = function () {
 
   router.get('/REST/projectList', mid.checkLoggedIn, mid.resolveFileCode, function(req, res, next) {
     console.log("Get projectList");
-    console.log("Getting project files for folderId: " + res.locals.folderId + " and projectFolderId: " + res.locals.projectFolderId);
-    myDriveHelper.getProjectFiles(res.locals.folderId, res.locals.projectFolderId).then(function (files) {
-      console.log("Processing files");
-      res.locals.sHelper.processDriveFiles(files);
-      console.log("Processing complete");
-      res.render('rest/projectList', {files: files});
-    }, function(reason) {
-      console.error(reason);
-    });
+    if (!res.locals.projectFolderId) {
+      console.log("No project folder id found");
+      res.send('null');
+      res.status(404).end();
+    } else {
+      console.log("Getting project files for folderId: " + res.locals.folderId + " and projectFolderId: " + res.locals.projectFolderId);
+      res.locals.driveHelper.getProjectFiles(res.locals.folderId, res.locals.projectFolderId).then(function (files) {
+        console.log("Processing files");
+        res.locals.sHelper.processDriveFiles(files);
+        console.log("Processing complete");
+        res.render('rest/projectList', {files: files});
+      }, function(reason) {
+        console.error(reason);
+        next(reason);
+      });
+    }
   });
 
   router.get('/REST/projectSummary', mid.checkLoggedIn, mid.getProjectId, function (req, res, next) {
@@ -386,7 +393,7 @@ module.exports = function () {
       //Put together the data for the createDoc request
       var historyData = {
         text: hData.text,
-        project: res.locals.projectId,
+        project: hData.project || res.locals.projectId,
         spentHours: hData.spentHours,
         totalProgress: hData.totalProgress,
         actionType: actionType,

@@ -59,9 +59,9 @@ function collateReviews(reviews) {
       averageScores[scoreName] += tempScore;
       overallScore += tempScore;
     }
-    averageScores[scoreName] = roundScore(averageScores[scoreName]/nReviews + 1);
+    averageScores[scoreName] = roundScore(averageScores[scoreName]/nReviews);
   }
-  averageScores.overall = roundScore(overallScore/(nTypes*nReviews) + 1);
+  averageScores.overall = roundScore(overallScore/(nTypes*nReviews));
   return averageScores;
 }
 

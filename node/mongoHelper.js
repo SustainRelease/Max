@@ -20,7 +20,6 @@ var Review = require("../models/review.js");
 var priorities = require("../data/priorities.js");
 var multiPromise = require("../node/multiPromise.js");
 var db = setUpMongo("navalis", false);
-var myDriveHelper = require("../node/myDriveHelper.js");
 
 var adminMail = require("../data/adminData.json").gmail;
 var adminId;
@@ -33,7 +32,8 @@ function isAdmin(id) {
   return adminId.equals(id);
 }
 
-function initAdmin () {
+function init (driveHelperIn) {
+  driveHelper = driveHelperIn;
   getOneDoc(User, {"gmail": adminMail}, {"_id": true}, true).then(function (response) {
     if (response.found) {
       console.log("AdminId found");
@@ -353,6 +353,7 @@ function projectKickoff (projectId, projectData, userId) {
   //Then approves the first history
   console.log("Project kickoff");
   return new Promise(function(fulfill,reject) {
+    //Add the new projectData to the project
     updateProject(projectId, projectData).then(function() {
       console.log("Project updated");
       //Find the only history for the project
@@ -499,11 +500,16 @@ function setDrivePermissions(projectId) {
             reject(reason);
           });
         } else {
-          var upData = {driveId: dfi};
-          updateDocSimple(Project, projectId, upData).then(function (response) {
-            console.log("DriveId added to project");
+          if (projectData.driveId != dfi) {
+            var upData = {driveId: dfi};
+            updateDocSimple(Project, projectId, upData).then(function (response) {
+              console.log("DriveId added to project");
+              fulfill(dfi);
+            });
+          } else {
+            console.log("No drive stuff added to project");
             fulfill(dfi);
-          });
+          }
         }
       }, function (reason) {
         console.error(reason);
@@ -520,7 +526,7 @@ function confirmDriveFolder (projectData) {
   return new Promise (function (fulfill, reject) {
     if (!projectData.driveId) {
       console.log("Creating project Folder")
-      myDriveHelper.createProjectFolder(projectData._id, projectData.clientName, projectData.title, projectData.description).then(function(dfi) {
+      driveHelper.createProjectFolder(projectData._id, projectData.clientName, projectData.title, projectData.description).then(function(dfi) {
         console.log("Drive project folder created with id: " + dfi);
         fulfill(dfi);
       });
@@ -534,7 +540,7 @@ function setUserPermission (userId, driveFolderId) {
   return new Promise (function (fulfill, reject) {
     getUserStuff(userId).then(function(userData) {
       var gmail = userData.gmail;
-      myDriveHelper.addPermission(driveFolderId, gmail).then(function (res) {
+      driveHelper.addPermission(driveFolderId, gmail).then(function (res) {
         fulfill();
       }, function(reason) {
         console.error(reason);
@@ -558,12 +564,12 @@ function createProject (projectData, userId) {
         projectData.clientUser = userId;
         projectData.client = userData.companyId;
         createDocSimple(Project, projectData).then(function (projectResponse) {
+          console.log("Project response: ");
+          console.log(projectResponse);
           var projectId = projectResponse.docId;
-          console.log("Setting drive permissions");
-          setDrivePermissions(projectId).then(function (dfi) {
-            console.log("Set drive permissions");
-            fulfill({docId: projectId, driveId: dfi});
-          });
+          console.log("Project id: ");
+          console.log(projectId);
+          fulfill({docId: projectId});
         }, function (reason) {
           console.error(reason);
           reject(reason);
@@ -1128,7 +1134,7 @@ function reset () {
 }
 
 module.exports.makeSession = makeSession;
-module.exports.initAdmin = initAdmin;
+module.exports.init = init;
 
 module.exports.getOneDoc = getOneDoc;
 module.exports.getDocs = getDocs;

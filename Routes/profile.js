@@ -168,7 +168,9 @@ module.exports = function () {
       if (user) {
         console.log("Authentication success");
         req.session.userId = user._id;
+        console.log("Reseting user status");
         res.locals.sHelper.resetUserStatus(res).then(function(response) { //Resets user status variables
+          console.log("Reset user status, redirecting to profile");
           res.redirect(res.locals.subRoute + '/profile');
         }, function(reason) {
           console.error(reason);

@@ -19,7 +19,9 @@ function loadFolderContent(fileCode) {
   } else {
     var url = "projectList";
   }
-  ajaxLoad("fileShare", url);
+  ajaxLoad("fileShare", url, null, null, function (textStatus, err) {
+    console.log("Drive project folder not found");
+  });
 }
 
 
@@ -112,28 +114,37 @@ function deleteHistory(historyId) {
 }
 
 
-//-------------GENERAL
+//-------------GENERAL--------------------
 
-function ajaxLoad(id, subUrl, data, callback) {
+function ajaxLoad(id, subUrl, data, sCallback, eCallback) {
   easyAjax("GET", "REST/" + subUrl, data, function(data) {
     $("#"+ id).html(data);
-    if(callback) {
-      callback();
+    if(sCallback) {
+      sCallback();
+    }
+  }, function(textStatus, err) {
+    if (eCallback) {
+      eCallback(textStatus, err);
     }
   });
 }
 
-function easyAjax(type, url, data, callback, timeout) {
+function easyAjax(type, url, data, sCallback, eCallback, timeout)  {
   $.ajax({
     type: type,
     url: url,
     timeout: timeout || 4000,
     data: data,
     success: function(data) {
-      callback(data);
+      sCallback(data);
     },
     error: function(jqXHR, textStatus, err) {
-      alert('text status '+ textStatus +', err ' + err)
+      if (eCallback) {
+        console.log("Running error callback");
+        eCallback(textStatus, err);
+      } else {
+        alert('text status '+ textStatus +', err ' + err);
+      }
     }
   });
 }

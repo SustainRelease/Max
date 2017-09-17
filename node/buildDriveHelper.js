@@ -15,8 +15,15 @@ function tidyFunction (file) {
   }
   return file;
 }
-var projectFolderName = "502331";
-
+var masterFolderId = "0B_vUIo8iD_BvVHRweTRsX2Nmcnc";
 var myDriveHelper = driveHelper;
-myDriveHelper.init(secretPath, fields, tidyFunction);
-module.exports = myDriveHelper;
+
+module.exports = function make(auth) {
+  console.log("Making drive helper");
+  if (!auth) {
+    console.error("No auth included");
+  } else {
+    myDriveHelper.init(auth, masterFolderId, fields, tidyFunction);
+    return myDriveHelper;
+  }
+};

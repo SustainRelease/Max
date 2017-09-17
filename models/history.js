@@ -79,7 +79,7 @@ HistorySchema.pre('validate', function(next) {
   }
 
   //Ensure project path is valid and that progress is equal to or greater than existing progress
-  var query = {"_id": this.project};
+  var query = {"_id": history.project};
   var projection = {"progress": true, "title": true};
   Project.findOne(query, projection, function (err, doc) { //Find current project progress
     if (err) {
@@ -87,6 +87,7 @@ HistorySchema.pre('validate', function(next) {
       next(err);
     } else {
       if (!doc) {
+        console.log("History project id: " + this.project);
         var error = new Error("Project not found");
         console.error(error);
         next(error);
@@ -160,7 +161,7 @@ HistorySchema.methods.approve = function approve (userId, withMod) {
     return action (history, userId, 1);
   } else {
     console.log("Approving history with userId: " + userId);
-    return action (history, userId, 1);
+    return action (history, userId, 2);
   }
 }
 
