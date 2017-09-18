@@ -13,6 +13,10 @@ module.exports = function () {
     res.redirect(res.locals.subRoute + '/login');
   });
 
+  router.get('/termsandconditions', function(req, res, next) {
+    res.render('termsAndConditions');
+  })
+
   router.get('/todo', function (req, res, next) {
     var messages = [
       "sessionize kusetManager",
@@ -23,14 +27,14 @@ module.exports = function () {
       "Admin screen (Create companies)"
     ];
     var title = "To do";
-    var pugData = {title: title, messages: messages};
+    var pugData = {title: title, messages: messages, pageTitle: "todo"};
     res.render('message', pugData);
   });
 
 
   router.get("/reset", function (req, res, next) {
     res.locals.mongoHelper.reset().then(function () {
-      res.render('message', {title: "Hello", messages: ["DB Reset"]});
+      res.render('message', {title: "Hello", messages: ["DB Reset"], pageTitle: "message"});
     });
   });
 

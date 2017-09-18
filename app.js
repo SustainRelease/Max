@@ -9,8 +9,10 @@ module.exports = function () {
   return makeApp();
 
   function setupHelpers() {
-    setupGoogleApis().then(function (result) {
-      mongoHelper.init(driveHelper);
+    setupGoogleApis().then(function(apiHelpers) {
+      mongoHelper.init(apiHelpers);
+      driveHelper = apiHelpers.drive;
+      calendarHelper = apiHelpers.calendar;
       console.log("Helpers all setup");
     }, function (reason) {
       console.error("Error setting up google apis");
@@ -24,11 +26,9 @@ module.exports = function () {
         var secretPath = path.join(__dirname,"data","client_secret.json");
         authHelper.getAuth(secretPath).then(function(auth) {
           console.log("Google authorization found");
-          driveHelper = require("./node/buildDriveHelper.js")(auth);
-          console.log("driveHelper setup");
-          calendarHelper = {"Hi": true};
-          console.log("calendarHelper setup");
-          fulfill();
+          var apiHelpers = require("./node/buildApiHelpers.js")(auth);
+          console.log("Drive and calendar helpers setup");
+          fulfill(apiHelpers);
         }, function(reason) {
           console.error(reason);
           reject(reason);
@@ -127,11 +127,16 @@ module.exports = function () {
 
     // error handler
     app.use(function(err, req, res, next) {
-      res.status(err.status || 500);
-      res.render('error', {
-        message: err.message,
-        error: {}
-      });
+      if (req.xhr) {
+        console.error(err);
+        res.status(500).send({error: err.message});
+      } else {
+        res.status(err.status || 500);
+        res.render('error', {
+          message: err.message,
+          error: {}
+        });
+      }
     });
 
 

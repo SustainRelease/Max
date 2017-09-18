@@ -1,6 +1,6 @@
 
 var google = require('googleapis');
-var drive = google.drive('v3');
+const drive = google.drive('v3');
 var Promise = require('promise');
 
 var auth;
@@ -30,8 +30,7 @@ function makeFolderName (clientName, name) {
 
 function createProjectFolder(projectId, clientName, name, description) {
   return new Promise (function(fulfill, reject) {
-    console.log("Creating project folder with auth: ");
-    console.log(auth);
+    console.log("Creating project folder");
     var fileMetadata = {
       'name' : makeFolderName(clientName, name),
       'description': description,
@@ -45,7 +44,7 @@ function createProjectFolder(projectId, clientName, name, description) {
        resource: fileMetadata,
        fields: 'id',
        auth: auth
-    }, function(err, file) {
+    }, {}, function(err, file) {
       if(err) {
         // Handle error
         console.error(err);
@@ -69,7 +68,7 @@ function addPermission (folderId, gmail) {
       fileId: folderId,
       auth: auth,
       resource: permResource
-    }, function (err, response) {
+    }, {}, function (err, response) {
       if (err) reject(err);
       else fulfill(response);
     });

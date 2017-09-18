@@ -19,7 +19,8 @@ function test(serial) {
   });
 }
 
-function multiPromiseSer (promiseObject, loud) {
+function multiPromiseSer (promiseObject, loud, passFail) {
+  //IN PASS FAIL MODE, THE ANSWER IS TRUE FOR PASS AND FALSE FOR FAIL (THERE IS NO ERROR)
   if (loud) console.log("Running a multi-promise in serial mode");
   return new Promise (function (fulfill, reject) {
     var keys = Object.keys(promiseObject);
@@ -32,10 +33,14 @@ function multiPromiseSer (promiseObject, loud) {
 
     function runOne () {
       promiseObject[keys[i]].then(function (result) {
-        taskComplete(result, i);
+        taskComplete(passFail || result, i);
       }, function (reason) {
         console.error(reason);
-        reject(reason);
+        if (passFail) {
+          taskComplete(false, i);
+        } else {
+          reject(reason);
+        }
       });
     }
 
@@ -50,13 +55,13 @@ function multiPromiseSer (promiseObject, loud) {
         runOne();
       }
     }
-
     runOne();
   });
 }
 
 
-function multiPromisePar (promiseObject, loud) {
+function multiPromisePar (promiseObject, loud, passFail) {
+  //IN PASS FAIL MODE, THE ANSWER IS TRUE FOR PASS AND FALSE FOR FAIL (THERE IS NO ERROR)
   if (loud) console.log("Running a multi-promise in parralel mode");
   return new Promise (function (fulfill, reject) {
     var keys = Object.keys(promiseObject);
@@ -68,10 +73,14 @@ function multiPromisePar (promiseObject, loud) {
     var results = {};
     for (let i = 0; i < nTasks; i++) {
       promiseObject[keys[i]].then(function (result) {
-        taskComplete(result, i);
+        taskComplete(passFail || result, i);
       }, function(reason) {
         console.error(reason);
-        reject(reason);
+        if (passFail) {
+          taskComplete(false, i);
+        } else {
+          reject(reason);
+        }
       });
     }
     function taskComplete(result, index) {
@@ -87,13 +96,29 @@ function multiPromisePar (promiseObject, loud) {
 }
 
 
-function multiPromise(promiseObject, loud, serial) {
+function multiPromiseOld(promiseObject, loud, serial, passFail) {
+  console.log("THIS VERSION OF MULTI-PROMISE IS DEPRECATED");
   if (serial) {
-    return multiPromiseSer(promiseObject, loud);
+    return multiPromiseSer(promiseObject, loud, passFail);
   } else {
-    return multiPromisePar(promiseObject, loud);
+    return multiPromisePar(promiseObject, loud, passFail);
+  }
+}
+
+function multiPromise(promiseObject, options) {
+  if (options) {
+    var loud = options.loud || false;
+    var passFail = options.passFail || false;
+    if (options.serial) {
+      return multiPromiseSer(promiseObject, loud, passFail);
+    } else {
+      return multiPromisePar(promiseObject, loud, passFail);
+    }
+  } else {
+    return multiPromisePar(promiseObject, false, false);
   }
 }
 
 module.exports.test = test;
-module.exports.mp = multiPromise;
+module.exports.mp = multiPromiseOld;
+module.exports.mp2 = multiPromise;

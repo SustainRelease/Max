@@ -33,6 +33,7 @@ module.exports = function () {
         heading: "Registration",
         runCode: "noClients();",
         pg: "Complete the forms below and accept terms and conditions, to register into our platform:",
+        pageTitle: "Register"
       }
       res.render('standardNewForm', pugData);
     }, function(reason) {
@@ -49,8 +50,7 @@ module.exports = function () {
     console.log("Tidy values:");
     console.log(userData);
     res.locals.mongoHelper.createDoc(User, userData).then(function (response) {
-      req.session.userId = response.docId;
-      res.redirect(res.locals.subRoute + '/profile');
+      res.redirect(res.locals.subRoute + '/login');
     }, function (reason) {
       console.error(reason);
       next(reason);
@@ -58,7 +58,7 @@ module.exports = function () {
   });
 
   router.get('/notifications', mid.checkLoggedIn, mid.getNotifications, function(req, res, next) {
-    res.render('notifications');
+    res.render('notifications', {pageTitle: "Notifications"});
   });
 
   router.get('/users', mid.checkLoggedIn, function(req, res, next) {
@@ -69,7 +69,11 @@ module.exports = function () {
          var cQuery = {"isClient": true, company: res.locals.companyId};  //Clients can only see there own company
       }
       res.locals.mongoHelper.getDocs(User, cQuery).then(function(clients) {
-        var pugData = {engineers: engineers, clients: clients};
+        var pugData = {
+          engineers: engineers,
+          clients: clients,
+          pageTitle: "Users"
+        };
         res.render('users', pugData);
       });
     });
@@ -82,10 +86,19 @@ module.exports = function () {
         //console.log(profile);
         var formVals = kusetManager.getFormVals("profileEdit", profile);
         var formData = {name: "userForm", scriptName: "userEdit", submitText: "Submit", submitPath: "/profile", vals: formVals, cancelPath: "/profile"};
-        var pugData = {user: profile, formData: formData};
+        var pugData = {
+          user: profile,
+          formData: formData,
+          pateTitle: "Edit profile"
+        };
         res.render('userEdit', pugData);
       } else {
-        res.render('user', {user: profile, ownProfile: true});
+        var pugData = {
+          user: profile,
+          ownProfile: true,
+          pageTitle: "Profile"
+        }
+        res.render('user', pugData);
       }
     }, function (reason) {
       console.error(reason);
@@ -108,7 +121,11 @@ module.exports = function () {
           next(new Error ("Access to user denied"));
         } else {
           res.locals.mongoHelper.getDocData(User, qUserId).then(function (profile) {
-            res.render('user', {user: profile});
+            var pugData = {
+              user: profile,
+              pageTitle: profile.firstName + " " + profile.lastName
+            }
+            res.render('user', pugData);
           }, function(reason) {
             console.error(reason);
             next(reason);
@@ -151,7 +168,11 @@ module.exports = function () {
   router.get('/login', function(req, res, next) {
     var formVals = kusetManager.getFormVals("login");
     var formData = {name: "loginForm", scriptName: "login", submitText: "Submit", submitPath: "/login", vals: formVals};
-    var pugData = {formData: formData, loggedOut: true, badAuth: req.query.badAuth};
+    var pugData = {
+      formData: formData,
+      badAuth: req.query.badAuth,
+      pageTitle: "Login"
+    };
     res.render('login', pugData);
 
     /*

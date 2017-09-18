@@ -51,19 +51,28 @@ module.exports = function buildKusetManager (kusetData, tidyValsFuncIn) {
   function addKuset (kui, isDup, selectData) {
     //Prepares a temporary kuset to be included in the form
 
-    //Step 1: Shallow copy the master kuset array
+    //Shallow copy the master kuset array
     var tempKuset = shallowCopy(kusets[kui]);
     //Note that this is only a shallow copy.
     //Internal arrays and objects are pointers to the original kuset
     //so do not alter them
 
-    //Step 2: Add special values
+    //Add automatic tooltips
+    if (tempKuset.date && !tempKuset.tooltip) {
+      tempKuset.tooltip = "Date must be in (dd/mm/yyyy) format";
+    }
+
+    //Process configuration settings
     if (configTag) {
       if (tempKuset[configTag + "Text"]) {
         tempKuset.text = tempKuset[configTag + "Text"];
       }
       if (tempKuset[configTag + "Req"]) {
         tempKuset.required = true;
+      }
+      //Remove tooltips for duplicates or configurations which forbid them
+      if (isDup || configs[configTag].noTooltips) {
+        tempKuset.tooltip = false;
       }
     }
 

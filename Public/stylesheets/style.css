@@ -51,6 +51,10 @@ a.fancy:hover {
   cursor: pointer;
 }
 
+button:hover {
+  cursor: pointer;
+}
+
 button.clean {
   background-color: inherit;
   border: none;
@@ -92,11 +96,11 @@ div.main {
 }
 
 div.block {
-  border-bottom: 1px solid black;
+  border-top: 1px solid black;
   padding: 10px;
 }
-div.block:last-child {
-  border-bottom: none;
+div.block.noBorder {
+  border-top: none;
 }
 
 div.table {
@@ -106,6 +110,10 @@ div.table {
 
 .hidden {
   display: none;
+}
+
+i.errText {
+  color: red;
 }
 
 /****************FLEX BOX****************/
@@ -122,6 +130,11 @@ div.flex_box {
 div.flex_box.right {
   -webkit-justify-content: flex-end;
   justify-content: flex-end;
+}
+
+div.flex_box.left {
+  -webkit-justify-content: flex-start;
+  justify-content: flex-start;
 }
 
 div.flex_box.vCenter {
@@ -329,6 +342,8 @@ div.main {
   text-align: center;
   margin-left: auto;
   margin-right: auto;
+  border-spacing: 0px;
+  border-collapse: collapse;
 }
 
 .form td {
@@ -336,6 +351,19 @@ div.main {
   vertical-align: middle;
   margin-top: auto;
   margin-bottom: auto;
+}
+
+.form td span {
+  display: block;
+  width: 100%;
+}
+
+.form td input.text {
+  width: 100%;
+}
+
+.form td.tooltip {
+  padding: 2px;
 }
 
 .form td:first-child {
@@ -419,6 +447,29 @@ img#profile_pic {
   display: block;
 }
 
+#reviews div.collated p, #reviews div.collated b {
+  display: block;
+  margin: 5px 0px;
+}
+
+#reviews div.review {
+  border-top: 1px solid #ccc;
+  padding: 10px;
+}
+
+#reviews div.review div.scores {
+  padding-right: 10px;
+}
+
+#reviews div.review div.comment {
+  padding-left: 10px;
+  border-left: 1px solid #ccc;
+}
+
+#reviews p.cUserName {
+  border-bottom: 1px solid #ccc;
+}
+
 
 /****************PROJECTS***************/
 #projects nav {
@@ -472,6 +523,24 @@ img#profile_pic {
   }
 }
 
+/****************GOOGLE MESSAGE***************/
+i.googleMessage {
+  display: block;
+  margin: 10px;
+}
+
+.tip {
+  padding: 4px;
+}
+
+#calendarFrame {
+  display: block;
+  position: relative;
+  top: 0px;
+  left: -10px;
+}
+
+
 /****************PROJECT***************/
 #project {
   width: 800px;
@@ -492,8 +561,14 @@ img#profile_pic {
 #project div.convo {
   width: 100%;
   padding: 10px 0;
-  border-top: 1px solid grey;
+  border-top: 1px solid #ccc;
 }
+#project div.convo.noBorder {
+  width: 100%;
+  padding: 10px 0;
+  border-top: none;
+}
+
 #project div.convo div:first-child {
   width: 20%;
 }
@@ -501,9 +576,9 @@ img#profile_pic {
   width: 80%;
 }
 #project textArea {
-  width: 100%;
-  height: 100%;
   display: block;
+  width: 90%;
+  margin: auto;
 }
 #project img.profile {
   width: 90%;
@@ -512,6 +587,12 @@ img#profile_pic {
   border: 1px solid black;
   border-radius: 4px;
 }
+
+#histories table.dataTable {
+  width: 800px;
+}
+
+
 
 #project td.icon {
   vertical-align: middle;

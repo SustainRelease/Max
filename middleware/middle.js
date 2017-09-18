@@ -2,11 +2,12 @@ var History = require("../models/history.js");
 var Project = require("../models/project.js");
 var adminCompanyName = require("../data/adminData.json").companyName;
 var scoreInfo = require("../data/scoreInfo.js");
-
+var middleLoud = false;
 
 
 //------------------Company stufff------------------
 function getCompanies(req, res, next) {
+  if (middleLoud) console.log("getCompanies");
   res.locals.mongoHelper.getDocs("Company", {}, {}).then(function(docs) {
     if (docs) {
       res.locals.companies = docs;
@@ -20,6 +21,7 @@ function getCompanies(req, res, next) {
 }
 
 function getClients(req, res, next) {
+  if (middleLoud) console.log("getClients");
   res.locals.mongoHelper.getDocs("Company", {isClient: true}, {}).then(function(docs) {
     if (docs) {
       res.locals.clients = docs;
@@ -35,6 +37,7 @@ function getClients(req, res, next) {
 //-------------------User stuff------------------
 
 function checkUserData (req, res, next, key, value) {
+  if (middleLoud) console.log("checkUserData");
   if (!res.locals.loggedIn) {
     console.log("Redirecting to login (checkUserData) from url " + req.url);
     res.redirect(res.locals.subRoute + '/login');
@@ -49,6 +52,7 @@ function checkUserData (req, res, next, key, value) {
 }
 
 function getQueryUser (req, res, next) {
+  if (middleLoud) console.log("getQueryUser");
   if (!req.query.id) {
     res.locals.qUserId = req.session.userId;
     //Just copy values across from user
@@ -70,29 +74,53 @@ function getQueryUser (req, res, next) {
 }
 
 function checkLoggedIn (req, res, next) {
-  console.log("Checking logged in");
   if (res.locals.loggedIn) {
     next();
   } else {
-    console.log("Redirecting to login (checkLoggedIn) from url " + req.url);
-    res.redirect(res.locals.subRoute + '/login');
+    if (req.xhr) {
+      next(new Error("User is not logged in"));
+    } else {
+      console.log("Redirecting to login (checkLoggedIn) from url " + req.url);
+      res.redirect(res.locals.subRoute + '/login');
+    }
   }
 }
 
 function checkEngineer(req, res, next) {
+  if (middleLoud) console.log("checkEngineer");
   return checkUserData(req, res, next, "isEngineer", true);
 }
 
 function checkClient(req, res, next) {
+  if (middleLoud) console.log("checkClient");
   return checkUserData(req, res, next, "isEngineer", false);
 }
 
 function checkAdmin(req, res, next) {
+  if (middleLoud) console.log("checkAdmin");
   return checkUserData(req, res, next, "isAdmin", true);;
 }
 
+function getUserGmail(req, res, next) {
+  if (middleLoud) console.log("getUserGmail");
+  var query = {"_id": req.session.userId};
+  var projection = {gmail: true};
+  res.locals.mongoHelper.getOneDoc("User", query, projection).then(function(doc) {
+    if (!doc) {
+      console.log("User not found");
+      next();
+    } else {
+      res.locals.userGmail = doc.gmail;
+      next();
+    }
+  }, function(resaon) {
+    console.error(reason);
+    next(reason);
+  });
+}
+
 function getUserProjectRole(req, res, next) {
-  console.log("Getting user project role");
+  if (middleLoud) console.log("getUserProjectRole");
   var query = {"_id": res.locals.projectId};
   var projection = {responsibleUser: true, qcUser: true, clientUser: true};
   res.locals.mongoHelper.getOneDoc(Project, query, projection).then(function(doc) {
@@ -109,7 +137,7 @@ function getUserProjectRole(req, res, next) {
         projectRoles[prKeys[i]] = projectData[pdKeys[i]];
       }
     }
-    
+
     res.locals.projectRoles = projectRoles;
 
     //Determine what role the user has in the project
@@ -130,6 +158,7 @@ function getUserProjectRole(req, res, next) {
 }
 
 function checkUserIsProjectClient (req, res, next) {
+  if (middleLoud) console.log("checkUserIsProjectClient");
   if (!res.locals.loggedIn) {
     console.log("Redirecting to login (checkUserIsProjectClient) from url " + req.url);
     res.redirect(res.locals.subRoute + '/login');
@@ -151,6 +180,7 @@ function checkUserIsProjectClient (req, res, next) {
 //--------------------History stuff----------------
 
 function getHistoryId(req, res, next) {
+  if (middleLoud) console.log("getHistoryId");
   if (!req.query.hId) {
     var err = new Error ("No history Id found");
     console.error(err);
@@ -162,6 +192,7 @@ function getHistoryId(req, res, next) {
 }
 
 function getHistoryProject(req, res, next) {
+  if (middleLoud) console.log("getHistoryProject");
   var query = {"_id": res.locals.historyId};
   var projection = {"project": true};
   res.locals.mongoHelper.getOneDoc(History, query, projection).then(function(hData) {
@@ -174,6 +205,7 @@ function getHistoryProject(req, res, next) {
 }
 
 function getNotifications(req, res, next) {
+  if (middleLoud) console.log("getNotifications");
   return History.getNotifications(req.session.userId).then(function (histories) {
     if (!histories || histories.length == 0) {
       res.locals.areHistories = false;
@@ -189,6 +221,7 @@ function getNotifications(req, res, next) {
 }
 
 function getProjectHistories(req, res, next) {
+  if (middleLoud) console.log("getProjectHistories");
   History.getProjectHistories(res.locals.projectId).then(function (histories) {
     if (!histories || histories.length == 0) {
       res.locals.areHistories = false;
@@ -199,7 +232,7 @@ function getProjectHistories(req, res, next) {
       for (let i = 0; i < histories.length; i++) {
         if (histories[i].notifiable) {
           res.locals.openAction = true;
-          res.locals.isUserActioner = req.session.userId == histories[i].actionUser;
+          res.locals.isUserActioner = (req.session.userId == histories[i].actionUser);
           res.locals.actionHistoryId = histories[i]["_id"];
         }
       }
@@ -214,6 +247,7 @@ function getProjectHistories(req, res, next) {
 
 //------------------DRIVE STUFF-------------------
 function resolveFileCode (req, res, next) {
+  if (middleLoud) console.log("resolveFileCode");
   res.locals.folderId = res.locals.sHelper.uncode(req.query.fCode);
   res.locals.projectFolderId = req.session.projectFolderId;
   next();
@@ -223,7 +257,7 @@ function resolveFileCode (req, res, next) {
 //--------------------Project stuff----------------
 
 function getProjectId(req, res, next) {
-  console.log("Getting project Id");
+  if (middleLoud) console.log("getProjectId");
   if (!req.query.id) {
     var err = new Error ("No project Id found");
     console.error(err);
@@ -236,7 +270,7 @@ function getProjectId(req, res, next) {
 }
 
 function accessProject(req, res, next) {
-  console.log("Accessing Project");
+  if (middleLoud) console.log("accessProject");
   if (res.locals.userProjectRole == "None") {
     console.error("Access to project " + projectId + " denied to user " + req.session.userId);
     res.redirect(res.locals.subRoute + '/profile');
@@ -246,11 +280,13 @@ function accessProject(req, res, next) {
 }
 
 function getProjectStatus(req, res, next) {
+  if (middleLoud) console.log("getProjectStatus");
   var projectId = res.locals.projectId;
-  var projection = {"status": true, "subStatus": true};
+  var projection = {"status": true, "subStatus": true, "reviewable": true};
   res.locals.mongoHelper.getDocData(Project, projectId, projection).then(function (doc) {
     res.locals.projectStatus = doc.status;
     res.locals.projectSubStatus = doc.subStatus;
+    res.locals.reviewable = doc.reviewable;
     next();
   }, function (reason) {
     console.error(reason);
@@ -259,6 +295,7 @@ function getProjectStatus(req, res, next) {
 }
 
 function getProjects (req, res, next) {
+  if (middleLoud) console.log("getProjects");
   var query;
   if (res.locals.isAdmin) {
     query = {};
@@ -301,10 +338,13 @@ function getProjects (req, res, next) {
 //--------------------REVIEWS----------------
 
 function getEngineerReviews(req, res, next) {
+  if (middleLoud) console.log("getEngineerReviews");
   if (res.locals.qUserIsEngineer) {
     console.log("Query user is engineer, getting reviews");
     res.locals.mongoHelper.getDocs("Review", {responsibleUser: res.locals.qUserId}, {}).then(function(docs) {
       if (docs) {
+        console.log("Found reviews:");
+        console.log(docs);
         res.locals.reviews = docs;
         console.log("Getting average scores");
         var collatedData = scoreInfo.collateReviews(docs);
@@ -333,6 +373,7 @@ module.exports.checkEngineer = checkEngineer;
 module.exports.checkClient = checkClient;
 module.exports.checkAdmin = checkAdmin;
 module.exports.getQueryUser = getQueryUser;
+module.exports.getUserGmail = getUserGmail;
 
 module.exports.resolveFileCode = resolveFileCode;
 

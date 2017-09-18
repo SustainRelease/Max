@@ -1,5 +1,14 @@
+div.flex_box.vCenter.topBit
+  div.flex_item
+    h2 History
+  div.flex_item.bonusButton
+    if (reviewable || closeable)
+      if (reviewable)
+        a.clean.fancy(href= subR + "/review?id=" + projectId) Review Project
+      if (closeable)
+        button(onclick="closeProject()") Close Project
 if areHistories  
-  table.dataTable.fullWidth
+  table.dataTable
     tr
       th Request Date
       th Description
@@ -37,11 +46,10 @@ if areHistories
           else
             td #{history.statusText}
         td.ghost
-          if index
+          if (isAdmin && !history.specialType)
             button.cancel(onclick="deleteHistory('" + history.id + "');") X
-if !openAction
-  if isEngineer
-    button#nhButton.weeVertMargin(onclick="showNewHistory();") New history event
-    div#newHistory.hidden
-      h3.weeVertMargin.tCenter New History Event
-      include ../partials/_form.pug
+if (!openAction && isEngineer && !projectClosed)
+  button#nhButton.weeVertMargin(onclick="showNewHistory();") New history event
+  div#newHistory.hidden
+    h3.weeVertMargin.tCenter New History Event
+    include ../partials/_form.pug

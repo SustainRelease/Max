@@ -1,22 +1,20 @@
 {
   "Scheduled": {
     "subStati": [
-      "Pending approval",
-      "Accepted",
-      "Accepted with modifications",
-      "Rejected"
+      "Pending approval"
     ]
   },
   "Ongoing": {
     "subStati": [
       "In Progress",
       "Internal Approval",
-      "Client Approval",
-      "Modifications"
+      "Client Approval"
     ]
   },
   "Finished": {
-
+    "subStati": [
+      "Complete"
+    ]
   },
   "History": [
     "In progress",
@@ -25,8 +23,7 @@
     "Client approved",
     "Waiting internal approval",
     "Internal approved",
-    "Modifications required",
-    "Internal rejected"
+    "Modifications required"
   ]
 
 }

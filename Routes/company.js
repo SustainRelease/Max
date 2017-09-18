@@ -4,7 +4,7 @@ module.exports = function () {
   var mid = require('../middleware/middle.js');
 
   router.get('/administrator', mid.checkAdmin, function(req, res, next) {
-    res.render('administrator');
+    res.render('administrator', {pageTitle: "Administrator"});
   });
 
   router.get('/REST/companyTable', mid.checkAdmin, mid.getClients, function (req, res, next) {

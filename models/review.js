@@ -35,6 +35,11 @@ var ReviewSchema = new mongoose.Schema({
     type: String,
     required: false,
     permanent: true
+  },
+  date: {
+    type: Date,
+    required: true,
+    default: Date.now()
   }
 });
 

@@ -16,10 +16,10 @@ module.exports = function () {
   var kusetManagerR = buildKusetManager(kusetData.review);
 
   router.get('/projects', mid.checkLoggedIn, mid.getProjects, function(req, res, next) {
-    res.render('projects');
+    res.render('projects', {pageTitle: "Projects"});
   });
 
-  router.get('/project', mid.checkLoggedIn, mid.getProjectId, mid.getUserProjectRole, mid.accessProject, function(req, res, next) {
+  router.get('/project', mid.checkLoggedIn, mid.getProjectId, mid.getUserProjectRole, mid.accessProject, mid.getUserGmail, function(req, res, next) {
     var projectId = res.locals.projectId;
     res.locals.mongoHelper.getDocData(Project, projectId).then(function(projectData) {
       req.session.projectFolderId = projectData.driveId;
@@ -61,7 +61,11 @@ module.exports = function () {
               vals: kusetManagerP.getFormVals("projectEdit", projectData, selectData),
               cancelPath: cancelPath
             };
-            var pugData = {projectData: projectData, formData: formData};
+            var pugData = {
+              projectData: projectData,
+              formData: formData,
+              pageTitle: "Edit project"
+            };
             res.render('projectEdit', pugData);
           }, function(reason) {
             console.error(reason);
@@ -74,7 +78,11 @@ module.exports = function () {
         if (projectData.locked && res.locals.isAdmin) {
           res.redirect(res.locals.subRoute + "/project?edit=true&&id=" + projectId); //If the project is locked, send admin to fix it
         } else {
-          res.render('project', {projectData: projectData});
+          var pugData = {
+            projectData: projectData,
+            pageTitle: "Project"
+          };
+          res.render('project', pugData);
         }
       }
     }, function (reason) {
@@ -122,7 +130,8 @@ module.exports = function () {
       var pugData = {
         formData: formData,
         mainId: "newProject",
-        heading: "New Project"
+        heading: "New Project",
+        pageTitle: "New project"
       }
       res.render('standardNewForm', pugData);
     }, function(reason) {
@@ -178,7 +187,7 @@ module.exports = function () {
     res.send({projectId: req.session.projectId});
   });
 
-  router.get('/REST/projectList', mid.checkLoggedIn, mid.resolveFileCode, function(req, res, next) {
+  router.get('/REST/projectList', mid.checkLoggedIn, mid.resolveFileCode, mid.getUserGmail, function(req, res, next) {
     console.log("Get projectList");
     if (!res.locals.projectFolderId) {
       console.log("No project folder id found");
@@ -224,7 +233,8 @@ module.exports = function () {
       formData: formData,
       mainId: "review",
       heading: "Project Review",
-      wide: true
+      wide: true,
+      pageTitle: "Review"
     }
     res.render('standardNewForm', pugData);
   });
@@ -252,7 +262,6 @@ module.exports = function () {
     });
   });
 
-
   //----------------------HISTORY-------------------------------
 
   router.get('/REST/historyKusets', function(req, res, next) {
@@ -265,12 +274,30 @@ module.exports = function () {
     res.send({actionHistoryId: res.locals.actionHistoryId});
   });
 
-  router.get('/REST/histories', mid.checkLoggedIn, mid.getProjectId, mid.getProjectStatus, mid.getProjectHistories, function (req, res, next) {
+  router.get('/REST/histories', mid.checkLoggedIn, mid.getProjectId, mid.getProjectStatus, mid.getProjectHistories, mid.getUserProjectRole, function (req, res, next) {
+    if (res.locals.areHistories) {
+      console.log("There are histories");
+    } else {
+      console.log("No histories");
+    }
+    if (res.locals.openAction) console.log("Open action: " + res.locals.openAction);
     var formVals = kusetManagerH.getFormVals("register");
     var submitPath = null;
     var cancelPath = null;
-    var formData = {name: "historyForm", noScripts: true, submitText: "Submit", submitPath: null, vals: formVals};
-    res.render('rest/histories', {formData: formData});
+    var formData = {
+      name: "historyForm",
+      noScripts: true,
+      submitText: "Submit",
+      submitPath: null,
+      vals: formVals
+    };
+    var pugData = {
+      closeable: (res.locals.projectStatus == "Ongoing" && res.locals.projectSubStatus == "In Progress" && res.locals.isAdmin),
+      reviewable: (res.locals.reviewable && res.locals.userProjectRole == "Client"),
+      projectClosed: (res.locals.projectStatus == "Finished"),
+      formData: formData
+    }
+    res.render('rest/histories', pugData);
   });
 
   router.post('/REST/historyAction', mid.checkLoggedIn, mid.getHistoryId, mid.getHistoryProject, function (req, res, next) {
@@ -315,11 +342,18 @@ module.exports = function () {
     makeHistory(hData, userProjectRole, projectRoles, res).then(function(docData) {
       updateProjectAnd201(res);
     }, function(reason) {
-      console.error(reason);
-      res.send('null');
-      res.status(500).end();
+      next(reason);
     });
   });
+
+  router.post('/REST/closeProject', mid.checkLoggedIn, mid.checkAdmin, mid.getProjectId, function (req, res, next) {
+    res.locals.mongoHelper.projectCloseoff(res.locals.projectId).then(function(success) {
+      res.send("null");
+      res.status(201).end();
+    }, function(reason) {
+      next(reason);
+    });
+  })
 
 
   function updateProjectAnd201(res) {
@@ -331,7 +365,6 @@ module.exports = function () {
       res.send("null");
       res.status(201).end();
     }, function(reason) {
-      console.error(reason);
       next(reason);
     });
   }

@@ -4,7 +4,7 @@
 
 var Promise = require('promise');
 var moment = require('moment');
-var multiPromiseLib = require("../node/multiPromise.js");
+var switchHelper = require("./switchHelper");
 
 var mongoose = require('mongoose');
 var session = require('express-session');
@@ -18,8 +18,11 @@ var History = require("../models/history.js");
 var Review = require("../models/review.js");
 
 var priorities = require("../data/priorities.js");
-var multiPromise = require("../node/multiPromise.js");
+var multiPromiseLib = require("../node/multiPromise.js");
 var db = setUpMongo("navalis", false);
+
+var driveHelper;
+var calendarHelper;
 
 var adminMail = require("../data/adminData.json").gmail;
 var adminId;
@@ -32,8 +35,9 @@ function isAdmin(id) {
   return adminId.equals(id);
 }
 
-function init (driveHelperIn) {
-  driveHelper = driveHelperIn;
+function init (apiHelpers) {
+  driveHelper = apiHelpers.drive;
+  calendarHelper = apiHelpers.calendar;
   getOneDoc(User, {"gmail": adminMail}, {"_id": true}, true).then(function (response) {
     if (response.found) {
       console.log("AdminId found");
@@ -257,7 +261,8 @@ function makeSession () {
       mongooseConnection: db
     }),
     cookie: {
-      maxAge: 100000
+      //rolling: true,
+      maxAge: 10*60000  //ten minutes
     }
   });
 }
@@ -305,18 +310,92 @@ function addPost (convoId, text, userId) {
 
 //-------------------PROJECTS----------------------
 function resolveProjectHistories (projectId) {
+  console.log("Resolving project histories");
   return new Promise(function (fulfill, reject) {
     var query = {"project": projectId};
-    var projection = {"totalProgress": true};
-    getDocs(History, query, projection).then(function(histories) {
+    getDocs(History, query).then(function(histories) {
       if (histories) {
+        //Get the maximum progress, highest specialType, index of any notifiable history and total spentHours
+        console.log("There are histories");
+        console.log("Iterating through histories");
         var maxP = 0;
+        var specialType = 0;
+        var notifiableFound = false;
+        var notifiableIndex;
+        var spentHours = 0;
         for (let i = 0; i < histories.length; i++) {
-          maxP = Math.max(maxP, histories[i].totalProgress);
+          var history = histories[i];
+          maxP = Math.max(maxP, history.totalProgress);
+          if (history.specialType) {
+            //If the special type required an action, make sure the action has been completed
+            if (history.actionType == "None" || history.actionResult) {
+              specialType = Math.max(specialType, history.specialType);
+            }
+          }
+          if (history.notifiable) {
+            console.log("Found notifiable");
+            if (!notifiableFound) {
+              notifiableIndex = i;
+              notifiableFound = true;
+            } else {
+              var err = new Error ("Multiple notifiable histories");
+              console.error(err);
+              reject(err);
+            }
+          }
+          spentHours += history.spentHours;
         }
-        var upData = {progress: maxP};
-        updateDocSimple(Project, projectId, upData).then(function (response) {
-          fulfill();
+        console.log("Finished iterating through histories");
+
+        //Create a data update object for the project
+        var upData = {
+          progress: maxP,
+          spentHours: spentHours
+        };
+
+        var query = {"_id": projectId};
+        var projection = {status: true};
+        getOneDoc(Project, query, projection).then(function(projectData) {
+          //WE could use the highestDate index here to do something fancy with the
+          //substatus like set modifications if the previous thing was accepted with mods
+          //But I think this will be a hassle because they might comment afterwards saying
+          //what mods they need to do. How would we know when the mods are over?
+
+          //If there are specialTypes, we need to get the project to see if we need to change the overall project status
+          var basicStati = ["Scheduled", "Ongoing", "Finished"];
+          var basicSubStati = ["Pending approval", "In Progress", "Complete"];
+          upData.status = basicStati[specialType];
+          upData.subStatus = basicSubStati[specialType];
+          //If there is a notifiable, we need to setup the substatus to match
+          if (notifiableFound) {
+            console.log("Processing notifiable");
+            var actionType = histories[notifiableIndex].actionType;
+            console.log("Actiontype: " + actionType);
+            if (upData.status == "Ongoing") {
+              var switchObject = {
+                "Client": "Client Approval",
+                "Internal": "Internal Approval"
+              };
+              console.log("Running switchHelper");
+              var switchRes = switchHelper(actionType, switchObject, "actionType");
+              console.log("Ok!");
+              if (switchRes.err) {
+                reject(err);
+              } else {
+                upData.subStatus = switchRes.answer;
+              }
+            } else {
+              console.log("Notifiable found but not for Ongoing project. Leaving substatus alone");
+            }
+          }
+          console.log("Updating project with: ");
+          console.log(upData);
+          updateDocSimple(Project, projectId, upData).then(function (response) {
+            fulfill();
+          }, function(reason) {
+            console.error(reason);
+            reject(reason);
+          });
         }, function(reason) {
           console.error(reason);
           reject(reason);
@@ -347,13 +426,48 @@ function getProjects (userId, isAdmin, projectStatus) {
   return getDocs(Project, query);
 }
 
+function projectCloseoff(projectId) {
+  console.log("Closing project " + projectId);
+  return new Promise(function(fulfill,reject) {
+    var hData = {
+      text: "Project closed by administrator",
+      project: projectId,
+      spentHours: 0,
+      totalProgress: 100,
+      actionType: "None",
+      specialType: 2 //Close project
+    };
+    createDoc(History, hData).then(function(hRes){
+      var pData = {
+        status: "Finished",
+        subStatus: "Complete",
+        reviewable: true,
+        progress: 100,
+        endDate: moment()
+      };
+      updateDocSimple(Project, projectId, pData).then(function(success) {
+        fulfill(true);
+      }, function(reason) {
+        console.error(reason);
+        reject(reason);
+      });
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
+}
+
 function projectKickoff (projectId, projectData, userId) {
   //For when the admin gives the first approval to a project
   //Updates the project
   //Then approves the first history
   console.log("Project kickoff");
   return new Promise(function(fulfill,reject) {
-    //Add the new projectData to the project
+    //Add the new projectData to the project and update drive and calendar stuff
+    projectData.status = "Ongoing";
+    projectData.subStatus = "In Progress";
+    projectData.startDate = moment();
     updateProject(projectId, projectData).then(function() {
       console.log("Project updated");
       //Find the only history for the project
@@ -385,7 +499,7 @@ function projectKickoff (projectId, projectData, userId) {
 function updateProject (projectId, projectData) {
   return new Promise(function(fulfill,reject) {
     updateDocSimple(Project, projectId, projectData).then(function(success) {
-      setDrivePermissions(projectId).then(function(dfi) {
+      setGooglePermissions(projectId).then(function(dfi) {
         fulfill();
       }, function(reason) {
         console.error(reason);
@@ -398,57 +512,49 @@ function updateProject (projectId, projectData) {
   });
 }
 
-function makeAccessUsers (data) {
-  var ofAccessUsers = [data.clientUser];
+function makeReqAccessUsers (data) {
+  var reqAccessUsers = [data.clientUser];
   if (data.responsibleUser) {
-    ofAccessUsers.push(data.responsibleUser);
+    reqAccessUsers.push(data.responsibleUser);
   }
   if (data.qcUser) {
-    ofAccessUsers.push(data.qcUser);
+    reqAccessUsers.push(data.qcUser);
   }
-  return ofAccessUsers;
+  return reqAccessUsers;
 }
 
-function makeToBeAdded (projectData, newAccessUsers) {
-  //Create proposed accessUser array based on the qc, resonsible and the client.
-  //This will be compared with the existing ofAccessUser array
-  //Find out what users to add
+function makeAccessObject (projectData) {
+  //Make accessObject based off existing information
+  console.log("Making acces object");
+  var accessObject = {
+    users: projectData.ofAccessUsers || [],
+    drive: projectData.ofUserDriveAccess || [],
+    cal: projectData.ofUserCalAccess || []
+  };
+  console.log(accessObject);
+
+  //Make a list of users requried to have access
+  console.log("Making reqAccessUsers");
+  var reqAccessUsers = makeReqAccessUsers(projectData);
+  console.log(reqAccessUsers);
+
+
   var toBeAdded = [];
-  var areExUsers;
-  console.log("Creating toBeAdded array from");
-  console.log("newAccessUser:");
-  console.log(newAccessUsers);
-  var areExUsers = (projectData.ofAccessUsers && projectData.ofAccessUsers.length);
-  if (!areExUsers) console.log("No existing access users");
-  if (areExUsers) {
-    var exAccessUsers = projectData.ofAccessUsers;
-    console.log("exAccessUsers:");
-    console.log(exAccessUsers);
-  }
+  var areExUsers = (projectData.ofAccesUsers && projectData.ofAccessUsers.length > 0);
+
   var include;
-  for (let i = 0; i < newAccessUsers.length; i++) {
-    console.log("Testing user: " + newAccessUsers[i]);
-    console.log("adminId is: " + adminId);
+  for (let i = 0; i < reqAccessUsers.length; i++) {
+    console.log("Testing user: " + reqAccessUsers[i]);
     include = true;
-    if (isAdmin(newAccessUsers[i])) {
+    if (isAdmin(reqAccessUsers[i])) {
       console.log("Is admin. Not being included");
       include = false;
     } else {
       if (areExUsers) {
-        console.log("Checking against exAccessUsers");
+        console.log("Checking against accessObject");
         //Check against existing access users
-        for (let j = 0; j < exAccessUsers.length; j++) {
-          if (newAccessUsers[i].equals(exAccessUsers[j])) {
-            include = false;
-            console.log("Match found. Not being included");
-          }
-        }
-      }
-      //Check against other members of the newAccessUsers array
-      if (i) {
-        console.log("Checking against newAccessUsers");
-        for (let k = 0; k < i; k++) {
-          if (newAccessUsers[i].equals(newAccessUsers[k])) {
+        for (let j = 0; j < accessObject.users.length; j++) {
+          if (reqAccessUsers[i].equals(accessObject.users[j])) {
             include = false;
             console.log("Match found. Not being included");
           }
@@ -456,61 +562,55 @@ function makeToBeAdded (projectData, newAccessUsers) {
       }
     }
     if (include) {
-      toBeAdded.push(newAccessUsers[i]);
+      console.log("Including user: "+ reqAccessUsers[i]);
+      accessObject.users.push(reqAccessUsers[i]);
+      accessObject.drive.push(false);
+      accessObject.cal.push(false);
+      console.log("Access object updated");
+      console.log(accessObject);
     }
   }
-  return toBeAdded;
+  return accessObject;
 }
 
 
-function setDrivePermissions(projectId) {
-  console.log("Setting drive permissions");
+function setGooglePermissions(projectId) {
+  console.log("Setting google permissions");
   //Sets up drive permissions based on ofAccessUsers
   return new Promise (function (fulfill, reject) {
-
     var query = {"_id": projectId};
     getOneDoc(Project, query).then(function(projectData) {
-      var newAccessUsers = makeAccessUsers(projectData);
-      var toBeAdded = makeToBeAdded(projectData, newAccessUsers);
-      console.log("Made toBeAdded:");
-      console.log(toBeAdded);
-
+      var accessObject = makeAccessObject(projectData);
+      console.log("Made accessObject:");
+      console.log(accessObject);
       //Get reference to drive folder
-      console.log("Confirming drive folder");
-      confirmDriveFolder(projectData).then(function(dfi) {
-        console.log("Confirmed drive folder");
-        if (toBeAdded.length) {
-          //Set permissions
-          console.log("Adding drive permissions");
-          console.log("building mpObject");
-          var mpObject = {};
-          for (let i = 0; i < toBeAdded.length; i++) {
-            mpObject[i] = setUserPermission(toBeAdded[i], dfi);
-          }
-          multiPromiseLib.mp(mpObject, true, true).then(function(mpR) {
-          console.log("Drive permissions added");
-            //Update project
-            var upData = {driveId: dfi, ofAccessUsers: newAccessUsers};
-            updateDocSimple(Project, projectId, upData).then(function (response) {
-              console.log("DriveId and ofAccessUsers added to project");
-              fulfill(dfi);
-            });
-          }, function (reason) {
-            console.error(reason);
-            reject(reason);
-          });
-        } else {
-          if (projectData.driveId != dfi) {
-            var upData = {driveId: dfi};
-            updateDocSimple(Project, projectId, upData).then(function (response) {
-              console.log("DriveId added to project");
-              fulfill(dfi);
-            });
-          } else {
-            console.log("No drive stuff added to project");
+      console.log("Confirming drive and calendar");
+      confirmDriveAndCalendar(projectData).then(function(mpR) {
+        console.log("Confirmed frive and calendar");
+        var dfi = mpR.dfi;
+        var gci = mpR.gci;
+        console.log("Confirmed with dfi: ");
+        console.log(dfi);
+        console.log("and gci:");
+        console.log(gci);
+        //Set permissions
+        addUserPermissions(accessObject, dfi, gci).then(function(accessObject) {
+          //Update project
+          var upData = {
+            ofAccessUsers: accessObject.users,
+            ofUserDriveAccess: accessObject.drive,
+            ofUserCalAccess: accessObject.cal,
+            driveId: dfi,
+            calendarId: gci
+          };
+          updateDocSimple(Project, projectId, upData).then(function (response) {
+            console.log("DriveId and ofAccessUsers updated to project");
             fulfill(dfi);
-          }
-        }
+          });
+        }, function (reason) {
+          console.error(reason);
+          reject(reason);
+        });
       }, function (reason) {
         console.error(reason);
         reject(reason);
@@ -522,13 +622,62 @@ function setDrivePermissions(projectId) {
   });
 }
 
+function addUserPermissions (accessObject, dfi, gci) {
+  console.log("Function - Add user permissions");
+  return new Promise (function (fulfill, reject) {
+    console.log("Existing accessObject:");
+    console.log(accessObject);
+    var mpObject = {};
+    for (let i = 0; i < accessObject.users.length; i++) {
+      mpObject[i] = setUserPermission(accessObject, i, dfi, gci);
+    }
+    multiPromiseLib.mp2(mpObject, {serial: true}).then(function(mpR) {
+      console.log("Set user permissions, mpR is:");
+      console.log(mpR);
+      var len = Object.keys(mpR).length;
+      var successCount = 0;
+      for (let i = 0; i < len; i++) {
+        console.log(mpR[i]);
+        if (mpR[i].userError) {
+          console.error("Error finding user " + accessObject.users[i]);
+        } else {
+          accessObject.drive[i] = mpR[i].drive;
+          accessObject.cal[i] = mpR[i].cal;
+          if (mpR[i].drive && mpR[i].cal) {
+            successCount++;
+          }
+        }
+      }
+      console.log(successCount + " out of " + accessObject.users.length + " permissions added");
+      console.log(accessObject);
+      fulfill(accessObject);
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
+    });
+  });
+}
+
+
+function confirmDriveAndCalendar(projectData) {
+  var mpObject = {
+    dfi: confirmDriveFolder(projectData),
+    gci: confirmCalendar(projectData)
+  };
+  return multiPromiseLib.mp2(mpObject, {loud: true, serial: true});
+}
+
 function confirmDriveFolder (projectData) {
   return new Promise (function (fulfill, reject) {
+    console.log("Confirming drive folder");
     if (!projectData.driveId) {
       console.log("Creating project Folder")
       driveHelper.createProjectFolder(projectData._id, projectData.clientName, projectData.title, projectData.description).then(function(dfi) {
         console.log("Drive project folder created with id: " + dfi);
         fulfill(dfi);
+      }, function(reason) {
+        console.error(reason);
+        reject(reason);
       });
     } else {
       fulfill(projectData.driveId);
@@ -536,22 +685,60 @@ function confirmDriveFolder (projectData) {
   });
 }
 
-function setUserPermission (userId, driveFolderId) {
+function confirmCalendar (projectData) {
   return new Promise (function (fulfill, reject) {
-    getUserStuff(userId).then(function(userData) {
-      var gmail = userData.gmail;
-      driveHelper.addPermission(driveFolderId, gmail).then(function (res) {
-        fulfill();
+    console.log("Confirming calendar");
+    if (!projectData.calendarId) {
+      console.log("Creating project calendar")
+      calendarHelper.createCalendar(projectData._id, projectData.clientName, projectData.title, projectData.description).then(function(gci) {
+        console.log("Google calendar created with id: " + gci);
+        fulfill(gci);
       }, function(reason) {
         console.error(reason);
-        var err = new Error ("[mongoHelper.setUserPermission]: Unable to add permission for user " + userId + " to driveFolder " + driveFolderId);
-        console.error(err);
-        fulfill();
+        reject(reason);
       });
-    }, function(reason) {
-      console.error(reason);
-      reject(reason);
-    });
+    } else {
+      fulfill(projectData.calendarId);
+    }
+  });
+}
+
+function setUserPermission (accessObject, index, dfi, gci) {
+  //PARRALLELIZE!!
+  return new Promise (function (fulfill, reject) {
+    var userId = accessObject.users[index];
+    var userAccess = {
+      drive: accessObject.drive[index],
+      cal: accessObject.cal[index]
+    };
+    var addDrive = !userAccess.drive;
+    var addCal = !userAccess.cal;
+    console.log("Setting user permission for userId: " + userId);
+    if (addDrive || addCal) {
+      console.log("changes required");
+      getUserStuff(userId).then(function(userData) {
+        var gmail = userData.gmail;
+        var mpObject = {};
+        if (addDrive) {
+          mpObject.drive = driveHelper.addPermission(dfi, gmail);
+        }
+        if (addCal) {
+          mpObject.cal = calendarHelper.addPermission(gci, gmail);
+        }
+        multiPromiseLib.mp2(mpObject, {loud: true, passFail: true}).then(function(mpR) {
+          if (mpR.drive) userAccess.drive = true;
+          if (mpR.cal) userAccess.cal = true;
+          fulfill(userAccess);
+        });
+      }, function(reason) {
+        console.error(reason);
+        userAccess.userError = true;
+        fulfill(userAccess);
+      });
+    } else {
+      console.log("No changes required");
+      fulfill(userAccess);
+    }
   });
 }
 
@@ -719,6 +906,28 @@ function approveHistory (historyId, userId, isWithMods) {
       }, function(reason) {
         reject(reason);
       });
+    });
+  });
+}
+
+//-----------------------REVIEWS----------------------
+function createReview(data) {
+  return new Promise (function (fulfill, reject) {
+    console.log("Creating review");
+    createDocSimple(Review, data).then(function(revRes) {
+      console.log("Created review");
+      var pData = {reviewable: false};
+      console.log("Updating project");
+      updateDocSimple(Project, data.project, pData).then(function(pRes) {
+        console.log("Updated project");
+        fulfill();
+      }, function(reason) {
+        console.error(reason);
+        reject(reason);
+      });
+    }, function(reason) {
+      console.error(reason);
+      reject(reason);
     });
   });
 }
@@ -901,7 +1110,7 @@ function createDoc (Model, data, extra) {
   Model = processModel(Model);
   switch(Model.modelName) {
     case "User":
-      if (data.gmail == adminMail) { //If creating a user with adminrmail, be sure to update admimail
+      if (data.gmail == adminMail) { //If creating a user with adminmail, be sure to update admimail
         return new Promise (function (fulfill, reject) {
           createDocSimple(Model, data).then(function(docData) {
             adminId = docData.docId;
@@ -915,6 +1124,8 @@ function createDoc (Model, data, extra) {
       }
     case "Project":
       return createProject(data, extra.userId);
+    case "Review":
+      return createReview(data);
     default:
       return createDocSimple(Model, data);
   }
@@ -1035,7 +1246,7 @@ function reset () {
       });
     }
     return new Promise(function (fulfill, reject) {
-      multiPromiseLib.mp(mpObject).then(function(res) {
+      multiPromiseLib.mp2(mpObject).then(function(res) {
         console.log("Drop success");
         fulfill(res);
       }, function(reason) {
@@ -1149,6 +1360,7 @@ module.exports.approveHistory = approveHistory;
 
 module.exports.getProjects = getProjects;
 module.exports.projectKickoff = projectKickoff;
+module.exports.projectCloseoff = projectCloseoff;
 module.exports.resolveProjectHistories = resolveProjectHistories;
 
 module.exports.authenticate = authenticate;

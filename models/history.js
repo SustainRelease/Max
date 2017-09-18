@@ -10,7 +10,7 @@ var HistorySchema = new mongoose.Schema({
   specialType: {
     type: Number,
     required: true,
-    default: 0 //0: None, 1: ProjectSchedule, 2: Job complete
+    default: 0 //0: None, 1: ProjectSchedule, 2: Close project
   },
   date: {
     type: Date,
@@ -92,6 +92,7 @@ HistorySchema.pre('validate', function(next) {
         console.error(error);
         next(error);
       } else {
+        //Ensure history progress matches or increases existing project progress
         var currentProgress = doc.progress;
         if (history.totalProgress) {
           var newProgress = history.totalProgress;
@@ -128,30 +129,6 @@ HistorySchema.pre('save', function(next) {
     console.log("Action result unmodified");
   }
   next();
-});
-
-HistorySchema.post('save', function() {
-  //Update project progress after saving history
-  //Maybe move this stuff to mongoHelper.resolveProjectHistories?
-  console.log("Running post save hook");
-  var history = this;
-  if (history.actionResult && history.specialType == 1) {
-    var projectData = {
-      status: "Ongoing",
-      subStatus: "In Progress"
-    }
-    let query = {"_id": history.project};
-    let options = {"multi": false, "upsert": false};
-    Project.findOneAndUpdate(query, projectData, options, function (err, doc) {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log("Post save hook complete");
-      }
-    });
-  } else {
-    console.log("Post save hook complete");
-  }
 });
 
 HistorySchema.methods.approve = function approve (userId, withMod) {

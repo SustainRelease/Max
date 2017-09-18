@@ -1,5 +1,6 @@
-var driveHelper = require("../node/driveHelper.js");
 var path = require('path');
+var driveHelper = require("./driveHelper.js");
+var calendarHelper = require("./calendarHelper.js");
 
 //Setting up variables for drive helper request
 var secretPath = path.join(__dirname,"..","data","client_secret.json");
@@ -16,14 +17,15 @@ function tidyFunction (file) {
   return file;
 }
 var masterFolderId = "0B_vUIo8iD_BvVHRweTRsX2Nmcnc";
-var myDriveHelper = driveHelper;
 
 module.exports = function make(auth) {
-  console.log("Making drive helper");
+  console.log("Making api helpers");
   if (!auth) {
     console.error("No auth included");
   } else {
-    myDriveHelper.init(auth, masterFolderId, fields, tidyFunction);
-    return myDriveHelper;
+    driveHelper.init(auth, masterFolderId, fields, tidyFunction);
+    calendarHelper.init(auth);
+    var apiHelpers = {drive: driveHelper, calendar: calendarHelper};
+    return apiHelpers;
   }
 };

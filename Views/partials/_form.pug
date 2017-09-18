@@ -3,9 +3,6 @@ div.tCenter.form
     table
       each kuset in formData.vals
         - var kText = kuset.text
-        - if (kuset.date) {
-        -   kText = kText + " (dd/mm/yyyy)";    
-        - }
         - if (kuset.required) {
         -   var kText = kText + "*";  
         - }
@@ -18,6 +15,10 @@ div.tCenter.form
                 option(value="null") ---
                 each opt in kuset.selectData
                   option(value=opt.id) #{opt.text}
+            td.tooltip
+              if (kuset.tooltip)
+                a.clean(title=kuset.tooltip)
+                  i.fa.fa-question-circle(aria-hidden="true")
             td.issueText
         else
           if (kuset.multi)
@@ -25,9 +26,9 @@ div.tCenter.form
               tr
                 td
                   if (i)
-                    input(type="radio" name=kuset.id value=i id=kuset.id + i)
+                    input.check(type="radio" name=kuset.id value=i id=kuset.id + i)
                   else
-                    input(type="radio" name=kuset.id value=i id=kuset.id + i checked)
+                    input.check(type="radio" name=kuset.id value=i id=kuset.id + i checked)
                 td
                   label #{selText}
           else
@@ -37,7 +38,7 @@ div.tCenter.form
                   input(type="checkbox" id=kuset.id value="agree")
                 td.tLeft
                   label I have read and agreed to the<br />
-                  a(href="#") terms and conditions
+                  a(href=subRoute + "/termsandconditions" target="_blank") terms and conditions
               else
                 if (kuset.permanent && kuset.value)
                   td=kuset.text + ":"
@@ -47,14 +48,18 @@ div.tCenter.form
                     label #{kText}
                   td
                     if (kuset.password)
-                      input(id=kuset.id name=kuset.id type="password" value=kuset.value)
+                      input.text(id=kuset.id name=kuset.id type="password" value=kuset.value)
                     else
                       if (kuset.textBox)
                         -var rows = kuset.rows || 2;
                         -var placeHolder = kuset.placeHolder + " (Max " + kuset.maxLen + " chars)";
                         textArea.postText.vAlign(id=kuset.id name=kuset.id rows=rows form=formData.name placeHolder=placeHolder) #{kuset.value}
                       else
-                        input(id=kuset.id, name=kuset.id type="text" value=kuset.value)
+                        input.text(id=kuset.id, name=kuset.id type="text" value=kuset.value)
+              td
+                if (kuset.tooltip)
+                  a.clean(title=kuset.tooltip)
+                    i.fa.fa-question-circle(aria-hidden="true")
               td.issueText
     input.submit(type="submit" value= formData.submitText)
     if formData.cancelPath

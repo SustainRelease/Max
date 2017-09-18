@@ -15,6 +15,10 @@ var ProjectSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  calendarId: {
+    type: String,
+    required: false
+  },
   clientUser: {
     type: mongoose.Schema.Types.ObjectId,
     required: true
@@ -37,6 +41,16 @@ var ProjectSchema = new mongoose.Schema({
   },
   ofAccessUsers: [{
     type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    default: []
+  }],
+  ofUserDriveAccess: [{
+    type: Boolean,
+    required: true,
+    default: []
+  }],
+  ofUserCalAccess: [{
+    type: Boolean,
     required: true,
     default: []
   }],
@@ -95,13 +109,11 @@ var ProjectSchema = new mongoose.Schema({
     required: true,
     default: 1
   },
-  rating: {
-    quality: {type: Number},
-    cooperation: {type: Number},
-    reccommend: {type: Number},
-    comment: {type: String},
-    required: false
-  },
+  reviewable: {
+    type: Boolean,
+    required: true,
+    default: false
+  }
 });
 
 //Check if a project of this description already exists for client

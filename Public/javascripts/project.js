@@ -2,8 +2,6 @@ var projectId;
 var actionHistoryId;
 var submission = false;
 
-
-
 //----------------PROJECT SUMMARY---------------
 function loadProjectSummary() {
   var url = "projectSummary?id=" + projectId;
@@ -19,7 +17,7 @@ function loadFolderContent(fileCode) {
   } else {
     var url = "projectList";
   }
-  ajaxLoad("fileShare", url, null, null, function (textStatus, err) {
+  ajaxLoad("fileShare", url, null, null, function (jqXHR, textStatus, err) {
     console.log("Drive project folder not found");
   });
 }
@@ -43,7 +41,7 @@ function submitPost() {
 
 
 //------------HISTORY STUFF-----------------
-function loadHistories() {
+function loadHistories(closed) {
   var url = "REST/histories?id=" + projectId;
   easyAjax("GET", url, null, function(data) {
     $("#histories").html(data);
@@ -85,6 +83,13 @@ function submitHistory(historyData) {
   });
 }
 
+function closeProject() {
+  var url = "REST/closeProject?id=" + projectId;
+  easyAjax("POST", url, null, function(data) {
+    reloadHistories();
+  });
+}
+
 function showNewHistory() {
   $("#nhButton").addClass("hidden");
   $("#newHistory").removeClass("hidden");
@@ -113,7 +118,6 @@ function deleteHistory(historyId) {
   action("delete", historyId);
 }
 
-
 //-------------GENERAL--------------------
 
 function ajaxLoad(id, subUrl, data, sCallback, eCallback) {
@@ -125,6 +129,8 @@ function ajaxLoad(id, subUrl, data, sCallback, eCallback) {
   }, function(textStatus, err) {
     if (eCallback) {
       eCallback(textStatus, err);
+    } else {
+      $("#"+ id).html("<i class='errText'>Unable to load</i>");
     }
   });
 }
@@ -140,10 +146,7 @@ function easyAjax(type, url, data, sCallback, eCallback, timeout)  {
     },
     error: function(jqXHR, textStatus, err) {
       if (eCallback) {
-        console.log("Running error callback");
         eCallback(textStatus, err);
-      } else {
-        alert('text status '+ textStatus +', err ' + err);
       }
     }
   });

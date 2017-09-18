@@ -2,7 +2,7 @@ extends layout
 
 block content
   div#project.main
-    div.block.tCenter
+    div.block.tCenter.noBorder
       h1 #{projectData.title}
     div.block
       h2.topBit Description
@@ -14,22 +14,31 @@ block content
       div.block
         h2.topBit Summary
         div#projectSummary
-      div.block
-        div.flex_box.vAlign.topBit
-          div.flex_item
-            h2.weeVertMargin History
-          div.flex_item
-            a.clean.fancy.weeVertMargin Request Invoice
-        div#histories
+      div.block#histories
       div.block
         h2.topBit Conversation
         div#conversation
       div.block
-        h2.topBit File Sharing
+        div.flex_box.vCenter.topBit
+          div.flex_item
+            h2 File Sharing
+          div.flex_item
+            -var tooltip = "Make sure you are logged into " + userGmail + " before trying to access drive files";
+            a.tip.clean(title=tooltip)
+              i.fa.fa-question-circle(aria-hidden="true")
+            button.tip.clean(onclick="loadFolderContent()")
+              i.fa.fa-refresh(aria-hidden="true")      
         div#fileShare
-      if (userProjectRole == "Client")
-        div.block
-          a.clean.fancy(href= subR + "/review?id=" + projectId) Review Project
-      script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
-      script(type="text/javascript" src="/staticMax/javascripts/formValidator.js")
-      script(type="text/javascript" src="/staticMax/javascripts/project.js")
+      div.block
+        div.flex_box.vCenter.topBit
+          div.flex_item
+            h2 Shared calendar
+          div.flex_item
+            -var tooltip = "If the calendar doesn't display, login with " + userGmail + " and refresh the page";
+            a.clean(title=tooltip)
+              i.fa.fa-question-circle(aria-hidden="true")
+        -var cSrc = "https://calendar.google.com/calendar/embed?src=" + projectData.calendarId + "&ctz=America/Bogota";
+        iframe#calendarFrame(src=cSrc style="border: 0" width="800" height="600" frameborder="0" scrolling="no")
+  script(type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js")
+  script(type="text/javascript" src="/staticMax/javascripts/formValidator.js")
+  script(type="text/javascript" src="/staticMax/javascripts/project.js")

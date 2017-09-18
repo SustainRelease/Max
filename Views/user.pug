@@ -2,7 +2,7 @@ extends layout
 
 block content
   div#profile.main
-    div.block
+    div.block.noBorder
       div.pho_view
         div.tCenter
           img#profile_pic(src= subR + "/REST/profilePic")
@@ -79,21 +79,25 @@ block content
         h2 Studies
         p #{user.stuDesc}
     if (reviews)
-      div.block
+      div#reviews.block
         h2.weeVertMargin Reviews
-        -var texts = ["Quality", "Cooperation", "Recommendation"];
-        -var values = [collatedReviews.qualityScore+1, collatedReviews.coopScore+1, collatedReviews.recommendScore+1];
-        -var overall = collatedReviews.overall + 1;
-        -for (let i = 0; i < texts.length; i++)
-          p #{texts[i]}: #{values[i]}/5
-        b Overall: #{overall}
+        div.flex_box.collated
+          -var texts = ["Quality", "Cooperation", "Recommendation"];
+          -var values = [collatedReviews.qualityScore+1, collatedReviews.coopScore+1, collatedReviews.recommendScore+1];
+          -var overall = collatedReviews.overall + 1;
+          -for (let i = 0; i < texts.length; i++)
+            div.flex_item
+              p #{texts[i]}: #{values[i]}/5
+          div.flex_item
+            b.vAlign Overall: #{overall}/5
         each review in reviews
-          div.flex_box
-            div.flex_item.third
+          div.flex_box.left.review
+            div.flex_item.third.scores
+              p.cUserName #{review.clientUserName} #{review.date}
               -var values = [review.qualityScore+1, review.coopScore+1, review.recommendScore+1];
               -for (let i = 0; i < texts.length; i++)
                 p #{texts[i]}: #{values[i]}/5
-            div.flex_item
+            div.flex_item.two_third.comment
               p #{review.comment}
               
             

@@ -184,7 +184,8 @@
       "login": {
         "tagReq": "login",
         "allowDuplicates": false,
-        "allInput": true
+        "allInput": true,
+        "noTooltips": true
       }
 
     },
@@ -215,6 +216,7 @@
         "id": "gmail",
         "text": "Gmail",
         "confirm": true,
+        "tooltip": "The gmail account which you will use to access shared files and calendars",
         "email": true,
         "gmail": true,
         "permanent": true,

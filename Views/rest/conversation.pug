@@ -1,13 +1,17 @@
-each post in posts
-  div.convo.flex_box
-    div.flex_item
-      p #{post.authorName}
-      p #{post.postTime}
-    div.flex_item
-      p #{post.text}
-div.convo.flex_box
+if posts
+  each post in posts
+    div.convo.flex_box
+      div.flex_item
+        p #{post.authorName}
+        p #{post.postTime}
+      div.flex_item
+        p #{post.text}
+-var newComClass = "convo flex_box"  
+-if (!posts) newComClass = newComClass + " noBorder";
+div(class=newComClass)
   div.flex_item
     img.profile(src= subR + "/REST/profilePic")
-  div.flex_item
-    textArea#postText.vAlign(rows="2" form="publicConvoForm")
-button.weeVertMargin(type="button" onclick="submitPost()") Submit
+  div.flex_item.vAlign
+    textArea#postText(rows="5" form="publicConvoForm")
+    div.hAlign.tCenter
+      button(type="button" onclick="submitPost()") Submit
