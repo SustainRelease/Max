@@ -1,6 +1,7 @@
 extends layout
 
 block content
+  -var includePM = false;
   div#profile.main
     div.block.noBorder
       div.pho_view
@@ -11,7 +12,8 @@ block content
             if (ownProfile)
               a.clean.fancy(href= subR + "/profile?edit=true") Edit Profile
             else
-              a.clean.fancy(href="#") Private Message
+              if (includePM)
+                a.clean.fancy(href="#") Private Message
           if (user.country)  
             p #{user.country} <br /> Joined in #{user.joinedDateMonthy}
           else
@@ -24,7 +26,8 @@ block content
               if (ownProfile)
                 a.clean.fancy(href= subR + "/profile?edit=true") Edit Profile
               else
-                a.clean.fancy(href="#") Private Message
+                if (includePM)
+                  a.clean.fancy(href="#") Private Message
             if (user.country)  
               p #{user.country} <br /> Joined in #{user.joinedDateMonthy}
             else
@@ -45,7 +48,8 @@ block content
             if (ownProfile)
               a.clean.fancy(href= subR + "/profile?edit=true") Edit Profile
             else
-              a.clean.fancy(href="#") Private Message
+              if (includePM)
+                a.clean.fancy(href="#") Private Message
       div.flex_box
         if (user.age || user.birthCountry)
           div.flex_item.third
