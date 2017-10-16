@@ -160,5 +160,4 @@ function multiPromise(promiseObject, options) {
 }
 
 module.exports.test = test;
-module.exports.mp = multiPromiseOld;
 module.exports.mp2 = multiPromise;
