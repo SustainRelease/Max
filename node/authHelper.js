@@ -16,6 +16,8 @@ var TOKEN_PATH = TOKEN_DIR + "navalis.json";
 
 var auth;
 
+if (loud) console.log("TOKEN_DIR = " + TOKEN_DIR);
+
 module.exports.getNewAuth = function getNewAuth(secretPath) {
   if (secretPath.substr(secretPath.length - 5) != ".json") {
     console.error("SecretPath must point to .json");

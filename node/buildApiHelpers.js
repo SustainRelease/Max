@@ -1,9 +1,7 @@
-var path = require('path');
 var driveHelper = require("./driveHelper.js");
 var calendarHelper = require("./calendarHelper.js");
 
 //Setting up variables for drive helper request
-var secretPath = path.join(__dirname,"..","data","client_secret.json");
 var fields = "id, name, mimeType, parents, modifiedTime";
 function tidyFunction (file) {
   var moment = require("moment");
