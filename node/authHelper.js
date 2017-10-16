@@ -5,6 +5,8 @@ var google = require('googleapis');
 var googleAuth = require('google-auth-library');
 var Promise = require('promise');
 
+var loud = true;
+
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/drive-nodejs-quickstart.json
 var SCOPES = ['https://www.googleapis.com/auth/drive','https://www.googleapis.com/auth/calendar'];
@@ -38,12 +40,16 @@ module.exports.getNewAuth = function getNewAuth(secretPath) {
 }
 
 module.exports.getAuth = function getAuth(secretPath) {
+  if (loud) console.log("Getting auth with secretPath: " + secretPath);
   if (secretPath.substr(secretPath.length - 5) != ".json") {
     console.error("SecretPath must point to .json");
     return;
   }
   return new Promise(function (fulfill, reject) {
+    if (loud) console.log("Reading secret path json");
     readJSON(secretPath).then(function(json) {
+      if (loud) console.log("Read: ");
+      if (loud) console.log(json);
       authorize(json).then(function(auth) {
         fulfill(auth);
       }, function(reason) {
