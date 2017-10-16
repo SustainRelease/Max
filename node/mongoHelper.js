@@ -586,7 +586,7 @@ function setGooglePermissions(projectId) {
       //Get reference to drive folder
       console.log("Confirming drive and calendar");
       confirmDriveAndCalendar(projectData).then(function(mpR) {
-        console.log("Confirmed frive and calendar");
+        console.log("Confirmed drive and calendar");
         var dfi = mpR.dfi;
         var gci = mpR.gci;
         console.log("Confirmed with dfi: ");
@@ -661,10 +661,14 @@ function addUserPermissions (accessObject, dfi, gci) {
 
 function confirmDriveAndCalendar(projectData) {
   var mpObject = {
-    dfi: confirmDriveFolder(projectData),
-    gci: confirmCalendar(projectData)
+    dfi: function () {
+      return confirmDriveFolder(projectData);
+    },
+    gci: function () {
+      return confirmCalendar(projectData);
+    }
   };
-  return multiPromiseLib.mp2(mpObject, {loud: true, serial: true});
+  return multiPromiseLib.mp2(mpObject, {loud: true, fSerial: true});
 }
 
 function confirmDriveFolder (projectData) {
